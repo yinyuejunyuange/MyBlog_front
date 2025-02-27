@@ -4,20 +4,24 @@
       class="navbar"
       mode="horizontal"
   >
+
     <div class="menu-items">
+      <el-menu-item index="/home" class="menu-link">
+        <router-link to="/home" class="router-logo">书易网</router-link>
+      </el-menu-item>
       <el-menu-item index="/editor" class="menu-link">
-        <router-link to="/editor" class="router-link">Editor</router-link>
+        <router-link to="/editor" class="router-link">撰写</router-link>
       </el-menu-item>
       <el-menu-item index="/reader" class="menu-link">
-        <router-link to="/reader" class="router-link">Reader</router-link>
+        <router-link to="/reader" class="router-link">阅读</router-link>
       </el-menu-item>
     </div>
 
     <div class="user-area">
-      <template v-if="token">
+      <template v-if="localToken">
         <el-dropdown>
           <span class="user-info">
-            <img :src="userAvatar" alt="User Avatar" class="avatar" />
+            <img :src="headImage" alt="User Avatar" class="avatar" />
             {{ userName }}
           </span>
           <template #dropdown>
@@ -57,7 +61,7 @@
         <el-form-item label="验证码">
           <div class="verify-code-container">
             <el-input
-                v-model="VerifyCode"
+                v-model="codeRef"
                 placeholder="请输入验证码"
                 class="verify-code-input"
             />
@@ -103,7 +107,7 @@
         <el-form-item label="验证码">
           <div class="verify-code-container">
             <el-input
-                v-model="VerifyCode"
+                v-model="codeRef"
                 placeholder="请输入验证码"
                 class="verify-code-input"
             />
@@ -125,16 +129,19 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import {ref} from 'vue'
+import {ElMessage} from 'element-plus'
 import axios from 'axios';
 
+import { inject } from 'vue';
+
 // 状态管理
-const token = ref(localStorage.getItem('token'))
+const localToken = ref(localStorage.getItem('token'))
 const activeMenu = ref('/editor')
 const userAvatar = ref('path/to/avatar.jpg')
-const userName = ref('Username')
+const userName = ref(localStorage.getItem('userName'))
+const codeRef = ref()
+const headImage=ref(localStorage.getItem('headImage'))
 
 // 登录表单
 const loginForm = ref({
@@ -142,7 +149,6 @@ const loginForm = ref({
   password: ''
 })
 
-const VerifyCode=ref()
 
 // 注册表单
 const registerForm = ref({
@@ -184,16 +190,48 @@ const switchToRegister = () => {
 }
 
 // 登录逻辑
-const login = () => {
+const login = async () => {
   // 这里添加实际的登录逻辑
-  if (loginForm.value.username && loginForm.value.password) {
-    // 模拟登录成功
-    token.value = 'your-token'
-    localStorage.setItem('token', token.value)
-    loginDialogVisible.value = false
-    ElMessage.success('登录成功')
-  } else {
-    ElMessage.error('请输入用户名和密码')
+  if(loginForm.value.password===''){
+    ElMessage.warning("密码不可为空")
+  }else if(loginForm.value.username===''){
+    ElMessage.warning("用户名不可为空")
+  }else if(codeRef.value===null){
+    ElMessage.warning("验证码不可为空")
+  }else{
+    const checkResponse=await axios.get("http://localhost:8080/myBlog/user/verify/checkCode",{
+      params: {
+        code: codeRef.value
+      },
+      headers:{
+        'verifyToken': verifyToken.value
+      }
+    })
+    if(checkResponse.data.code===200){
+      ElMessage.success('验证码验证成功')
+
+      //ElMessage.success('验证成功')
+      const loginResponse=await axios.post("http://localhost:8080/myBlog/user/login",loginForm.value)
+
+      if(loginResponse.data.code===200){
+        localStorage.setItem('token',loginResponse.data.data.token);
+        ElMessage.success(localStorage.getItem('token'))
+        localToken.value=localStorage.getItem('token');
+        headImage.value="http://localhost:8080/myBlog/user/getHead/"+loginResponse.data.data.imageUrl;
+        localStorage.setItem('headImage',headImage.value);
+        userName.value=loginResponse.data.data.username
+        localStorage.setItem('userName',userName.value);
+        loginDialogVisible.value=false
+        ElMessage.success("登录成功")
+       // location.reload()
+
+      }else{
+        ElMessage.error("登录失败")
+      }
+
+    }else{
+      ElMessage.error("验证码错误")
+    }
   }
 }
 
@@ -210,7 +248,7 @@ const register = () => {
   switchToLogin()
 }
 
-const verifyToken = ref(null)
+const verifyToken = ref('')
 const verifyCodeImage = ref(null)
 // 获取验证码的方法
 const fetchVerifyCode = async () => {
@@ -220,8 +258,12 @@ const fetchVerifyCode = async () => {
     })
 
     // 从响应头中获取 verifyToken
-    const token = response.headers['verifyToken']
-    verifyToken.value = token
+    verifyToken.value= response.headers['verifytoken'] ||
+        response.headers.verifytoken ||
+        response.headers.get('verifytoken')
+
+    // ElMessage.success(verifyToken.value)
+    // ElMessage.success(response.headers.get('verifytoken'))
 
     // 创建图片URL
     const imageUrl = URL.createObjectURL(new Blob([response.data], { type: 'image/jpeg' }))
@@ -235,7 +277,7 @@ const fetchVerifyCode = async () => {
 
 // 登出逻辑
 const logout = () => {
-  token.value = null
+  localToken.value = null
   localStorage.removeItem('token')
   ElMessage.success('已退出登录')
 }
@@ -253,11 +295,18 @@ const logout = () => {
 
 .menu-items {
   display: flex;
+
 }
 
 .router-link {
   text-decoration: none;
   color: blue;
+}
+
+.router-logo{
+  text-decoration: none;
+  color: #5b5bed;
+  font-size:30px;
 }
 
 .menu-link {

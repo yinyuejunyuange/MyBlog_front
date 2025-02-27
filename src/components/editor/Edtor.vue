@@ -30,7 +30,7 @@
           :mode="mode"
       />
       <Editor
-          style="height: 500px; overflow-y: hidden;"
+          style="height: 300px; overflow-y: hidden;margin: 0"
           v-model="valueHtml"
           :defaultConfig="editorConfig"
           :mode="mode"
@@ -113,8 +113,11 @@ editorConfig.MENU_CONF['uploadImage'] = {
   server: 'http://localhost:8080/myBlog/user/blog/file/upload',
   fieldName: 'image',// 对应后端的参数
   // 继续写其他配置...
-  base64LimitSize: 5*1024
+  base64LimitSize: 5*1024,
   // 小于5kb的图片 就直接用base64的格式去存储 而不是传递给后端
+  headers:{
+    token:localStorage.getItem('token')
+  }
 }
 
 function clickButton(){
@@ -129,7 +132,11 @@ const submitBlog=async()=>{
 
   console.log(blog.value)
 
-  const response=await axios.post("http://localhost:8080/myBlog/user/blog/write",blog.value);
+  const response=await axios.post("http://localhost:8080/myBlog/user/blog/write",blog.value,{
+    headers:{
+      "token":localStorage.getItem("token")
+    }
+  });
   if(response.code===200){
     this.message.info(response.msg)
   }
@@ -173,11 +180,9 @@ const mode=ref('default')
     justify-content: center; /* 垂直居中 */
     padding-left: 200px; /* 添加一些内边距 */
     padding-right: 200px; /* 添加一些内边距 */
+    margin: 0;
   }
 
-  .editor{
-
-  }
 
   .title_work input, .title_work textarea {
     width: 100% ; /* 设置宽度为 100% */
