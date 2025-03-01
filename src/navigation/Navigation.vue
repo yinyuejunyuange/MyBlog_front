@@ -221,6 +221,7 @@ const login = async () => {
         localStorage.setItem('headImage',headImage.value);
         userName.value=loginResponse.data.data.username
         localStorage.setItem('userName',userName.value);
+        localStorage.setItem('userId',loginResponse.data.data.id)
         loginDialogVisible.value=false
         ElMessage.success("登录成功")
        // location.reload()
