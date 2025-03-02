@@ -15,179 +15,15 @@
           <p>总点赞数: {{ author.kudosNum }}</p>
           <p>总粉丝数: {{ author.starNum }}</p>
 
-          <div>
-            <el-button
-            v-if="!author.isUserStar"
-            @click="statBlogAuthor"
-            :style="{color: '#1E90FF'}">
-              <span>关注</span>
-            </el-button>
-            <el-button
-                v-else
-                @click="cancelStatBlogAuthor"
-                :style="{color: 'gray'}">
-              <span>已关注</span>
-            </el-button>
-
-          </div>
-
         </el-card>
-        <el-card
-          class="blogList">
-          著作
-          <el-card
-              v-for="article in blogs"
-              :key="article.id"
-              class="article-item"
-              shadow="hover"
-              @click="readArticle(article.id)"
-          >
-            <div class="flex flex-col">
-              <span class="title">{{ article.title }}</span>
-            </div>
-          </el-card>
 
-        </el-card>
       </el-card>
 
       <el-card class="blog-post" :body-style="{ padding: '20px' }">
-        <h1>{{ post.title }}</h1>
-        <!--    <p class="date">{{ formattedDate }}</p>-->
-
-        <div class="items-in-list">
-          <div class="text-sm text-gray-500 space-x-2">
-            <div >
-              <el-icon class="icon-class" ><View/></el-icon>
-              <span class="icon-span">{{ post.watch }}</span>
-              <el-icon class="icon-class"
-                       :style="{color:post.isUserStar? '#1E90FF': 'gray'}"
-                       @click="StarBlog"><StarFilled /></el-icon>
-              <span class="icon-span">{{ post.star }}</span>
-              <el-icon class="icon-class"
-                       @click="changeCommentDrawer"><ChatSquare /></el-icon>
-              <span class="icon-span">{{ post.commentNum }}</span>
-              <el-icon class="icon-class"
-                       :style="{color: post.isUserKudos? '#1E90FF': 'gray'}"
-                       @click="kudosBlog"><Pointer /></el-icon>
-              <span class="icon-span">{{ post.kudos }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="types">
-          <h4>博客类型</h4>
-          <button
-              class="but1"
-              v-for="(type, index) in typeNames"
-              :key="index"
-              :class="{ active: activeType === type.value }"
-              @click="toggleType(type.value)"
-          >{{  type.name}}</button>
-        </div>
-        <div class="contextClass">
-          <div v-html="post.context"></div>
-        </div>
-      </el-card>
-
-      <el-card class="blogList same-blog ">
-        相同类型
-        <el-card v-show="typeBlogs.length===0 "
-        :style="{marginTop: '10px'}">
-          暂无相似内容
-        </el-card>
-        <el-card
-            v-for="article in typeBlogs"
-            :key="article.id"
-            class="article-item"
-            shadow="hover"
-            @click="readArticle(article.id)"
-        >
-          <div class="flex flex-col">
-            <span class="title">{{ article.title }}</span>
-          </div>
-        </el-card>
 
       </el-card>
 
     </div>
-    <el-drawer
-        title="评论列表"
-        v-model="showCommentDrawer"
-        direction="rtl"
-        size="30%"
-    >
-      <template #default> <!--没有# 后面的东西 就没法显示-->
-        <div v-if="comments!=null" >
-          <div v-for="(comment, index) in comments" :key="index" class="comment-item">
-            <span class="user-info">
-              <img :src=comment.userImage alt="User Avatar" class="avatar" />
-              {{ comment.userName }}
-              <span>{{formatTime(comment.updateTime)}}</span>
-
-            </span>
-            <div class="context" >
-              {{ comment.context }}
-            </div>
-            <div class="action-buttons">
-              <span class="icons">
-                 <el-icon class="icon-comment"
-                          :style="{color: comment.isUserKudos?'#1E90FF': 'gray'}"
-                          @click="kudosComment(comment)"><Pointer /></el-icon>
-                <span class="comment-kudos">{{ comment.kudos }}</span>
-                <span @click="replyClick(index)">
-                  <el-icon icon-comment ><ChatDotSquare /></el-icon>
-                <span class="comment-kudos"
-                >{{ comment.replyList.length }}</span>
-                </span>
-              <span
-                  class="icon-reply"
-                  @click="toggleReplyInput(index)">回复</span>
-              </span>
-            </div>
-            <div v-if="replyIndex===index">
-              <el-input class="textarea-reply"
-                        type="textarea"
-                        v-model="commentReply"
-                        placeholder="请输入回复内容"
-                        :autosize="{minRows:3,maxRows:8}"></el-input>
-<!--              <textarea class="textarea-reply" ></textarea>-->
-              <el-button @click="submitReply(comment)">提交回复</el-button>
-            </div>
-
-            <div v-if="replyListIndex===index&&comment.replyList.length>0">
-              <div v-for="(reply, index) in comment.replyList" :key="index" class="reply-item">
-                <span class="user-info">
-              <img :src=reply.userImage alt="User Avatar" class="avatar" />
-              {{ reply.userName }}
-              <span>{{formatTime(reply.updateTime)}}</span>
-
-            </span>
-                <div class="context" >
-                  {{ reply.context }}
-                </div>
-                <div class="action-buttons">
-                  <span class="icons">
-                    <el-icon class="icon-comment"
-                          :style="{color: reply.isUserKudos?'#1E90FF':'gray'}"
-                          @click="kudosReply(reply)"><Pointer /></el-icon>
-                    <span class="comment-kudos">{{ reply.kudos }}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-        <div v-else>
-          暂无评论
-        </div>
-
-      </template>
-      <template #footer>
-        <el-input v-model="newComment" placeholder="请输入评论内容" />
-        <el-button @click="submitComment">发布评论</el-button>
-      </template>
-    </el-drawer>
-
   </div>
 </template>
 
@@ -435,7 +271,7 @@ const toggleType = (value) => {
 const kudosBlog=async ()=>{
 
   if(post.value.isUserKudos){
-     // 如果用户点了赞 就取消点赞
+    // 如果用户点了赞 就取消点赞
     if(localStorage.getItem("token")===null){
       ElMessage.warning("出现错误请重新登录")
     }else{
