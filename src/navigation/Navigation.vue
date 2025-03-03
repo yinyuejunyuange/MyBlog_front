@@ -15,6 +15,9 @@
       <el-menu-item index="/reader" class="menu-link">
         <router-link to="/reader" class="router-link">阅读</router-link>
       </el-menu-item>
+      <el-menu-item index="/userCenter/userBlogs" class="menu-link">
+        <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>
+      </el-menu-item>
     </div>
 
     <div class="user-area">

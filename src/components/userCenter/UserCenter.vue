@@ -1,9 +1,8 @@
-
 <template>
   <div class="container">
+    <h2 class="userSpace">用户{{userName}}的空间</h2>
     <div class="card-group">
       <el-card class="author-info">
-        <!--      <img :src="" alt="Author Avatar" class="author-avatar" />-->
         <el-card>
            <span class="user-info">
               <img :src=author.userImage alt="User Avatar" class="avatar" />
@@ -14,31 +13,174 @@
           <p>总访问量: {{ author.visibleNum }}</p>
           <p>总点赞数: {{ author.kudosNum }}</p>
           <p>总粉丝数: {{ author.starNum }}</p>
-
+          <el-button type="primary" @click="openSettings">设置</el-button> <!-- 设置按钮 -->
         </el-card>
 
       </el-card>
 
       <el-card class="blog-post" :body-style="{ padding: '20px' }">
-
+        <el-menu
+            default-active="/userCenter/userBlogs"
+            class="navbar"
+            mode="horizontal"
+            router
+        >
+          <el-menu-item index="/userCenter/userBlogs">
+            <span>我的博客</span>
+          </el-menu-item>
+          <el-menu-item index="/userCenter/userAttention">
+            <span>我的关注</span>
+          </el-menu-item>
+          <el-menu-item index="/userCenter/userStar">
+            <span>我的收藏</span>
+          </el-menu-item>
+        </el-menu>
+        <div>
+          <router-view v-slot="{ Component }">
+            <keep-alive>
+              <component :is="Component" />
+            </keep-alive>
+          </router-view>
+        </div>
       </el-card>
-
     </div>
+
+    <el-dialog v-model="dialogVisible" title="用户设置">
+      <el-form :model="form" label-width="100px">
+        <el-form-item label="用户名">
+          <el-input v-model="form.username"></el-input>
+        </el-form-item>
+        <el-form-item label="用户邮箱" :error="emailError">
+          <el-input v-model="form.email" @blur="validateEmail"></el-input>
+        </el-form-item>
+        <el-form-item label="用户头像">
+          <el-upload
+              class="avatar-uploader"
+              :show-file-list="false"
+              :before-upload="beforeUpload"
+              @change="handleAvatarChange"
+              :headers='uploadHeaders'
+          >
+            <el-button size="small" type="primary">上传头像</el-button>
+          </el-upload>
+          <img v-if="avatarUrl" :src="avatarUrl" class="avatar-preview" alt="Avatar Preview" />
+        </el-form-item>
+        <el-form-item label="性别">
+          <el-select v-model="form.sex" placeholder="请选择性别">
+            <el-option label="男" value=1></el-option>
+            <el-option label="女" value=0></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="个人简介">
+          <el-input type="textarea" v-model="form.introduce"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveSettings">确 定</el-button>
+      </span>
+    </el-dialog>
+
   </div>
 </template>
 
 <script setup>
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
-import { View ,StarFilled ,ChatSquare ,Pointer,ChatDotSquare} from '@element-plus/icons-vue'
 
 import { onBeforeUnmount, ref, shallowRef, onMounted ,computed} from 'vue'
 import { ElButton, ElInput ,ElMessage} from 'element-plus'
-import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import axios from 'axios';
+import { useRouter, useRoute } from 'vue-router' // 添加这行
 
-import router from "@/router/router.js";
-import { useRoute } from 'vue-router';
 
+const dialogVisible = ref(false);
+const form = ref({
+  username: '',
+  email: '',
+  sex: 0,
+  introduce: '',
+});
+
+const avatarUrl = ref('');
+let avatarFile = ref(null);
+
+const openSettings = () => {
+  dialogVisible.value = true;
+};
+
+const emailError = ref('');
+
+const validateEmail = () => {
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(form.value.email)) {
+    emailError.value = '请输入有效的邮箱地址';
+  } else {
+    emailError.value = '';
+  }
+};
+
+const saveSettings = async () => {
+
+  const formParams={
+    userName: form.value.username,
+    email: form.value.email,
+    sex:form.value.sex,
+    introduce:form.value.introduce
+  }
+  const response=await axios.post("http://localhost:8080/myBlog/user/changeUserInfo",formParams,{
+    headers:{
+      token:localStorage.getItem('token')
+    }
+  })
+
+  if(response.data.code===200){
+    localStorage.setItem('userName',form.value.username)
+    await init()
+  }
+
+
+  dialogVisible.value = false; // 关闭弹窗
+};
+
+const beforeUpload = (file) => {
+  const isImage = file.type.startsWith('image/');
+  if (!isImage) {
+    this.$message.error('只能上传图片文件！');
+  }
+  return isImage;
+};
+
+const handleAvatarChange = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file.raw);
+  // 这里可以进一步处理文件上传
+  const response=await axios.post("http://localhost:8080/myBlog/user/makeHead",formData,{
+
+    headers:{
+      'Content-Type': 'multipart/form-data',
+      token: localStorage.getItem("token")
+    }
+  })
+
+  if(response.data.code===200){
+    ElMessage.success("头像上传成功")
+    localStorage.setItem('headImage',response.data.data)
+    author.value.userImage=response.data.data
+  }
+
+  avatarUrl.value = URL.createObjectURL(file.raw); // 预览头像
+};
+
+const router = useRouter()
+const route = useRoute()
+
+// 添加 activeRoute 计算属性
+const activeRoute = ref('')
+
+// 添加路由跳转处理函数
+const handleSelect = (path) => {
+  activeRoute.value=path
+}
 
 const author=ref({
   id:'',
@@ -52,6 +194,8 @@ const author=ref({
   kudosNum:0,
   isUserStar:ref(false)
 })
+
+const userName=ref(localStorage.getItem('userName'))
 
 const showCommentDrawer = ref(false);
 const comments = ref([])
@@ -92,325 +236,34 @@ const typeLists=ref([
   {name:'操作系统',value:'OS'},
 ])
 
-// 新增的状态变量，用于跟踪当前活动的按钮索引
-const activeType = ref(null);
-
-const replyIndex=ref(-1)
-
-const replyListIndex=ref(-1) // 回复列表
-
-const typeNames = computed(() => {
-  if(post.value.typeList!==undefined){
-    return typeLists.value.filter(type => post.value.typeList.includes(type.value));
-  }
-
-  return null;
-});
-
-const current=ref(1)
-const total=ref()
-const pageSize=ref(6)
-
-const blogs=ref([])
-const typeBlogs=ref([])
-
 onMounted(async ()=>{
-  const route = useRoute();
-  // 首先尝试从路由参数中获取
-  if (route.query.post) {
-    //post.value = route.query.post
+  await init()
+})
 
-    const parse = JSON.parse(route.query.post);
-
-    post.value.id=parse.id
-    post.value.title=parse.title;
-    post.value.context=parse.context;
-    post.value.typeList=parse.typeList;
-    post.value.Introduce=parse.introduce;
-    post.value.createTime=parse.createTime;
-    post.value.updateTime=parse.updateTime
-    post.value.star=parse.star;
-    post.value.kudos=parse.kudos;
-    post.value.commentNum=parse.commentNum;
-    post.value.watch=parse.watch;
-    post.value.isUserKudos=parse.isUserKudos;
-    post.value.isUserStar=parse.isUserStar;
-    post.value.userId=parse.userId
-
-    console.log(parse)
-
-    // 向后端查询所有评论
-    try {
-      if(localStorage.getItem("token")!==null){
-        const response = await axios.get('http://localhost:8080/myBlog/user/blog/getComment', {
-          params: {
-            blogId: parse.id
-          },
-          headers: {
-            token: localStorage.getItem('token')
-          }
-        })
-        comments.value = response.data.data // 假设后端返回的数据结构中有 data 字段存储评论列表
-      }else{
-        const response = await axios.get('http://localhost:8080/myBlog/user/blog/getComment', {
-          params: {
-            blogId: parse.id
-          },
-        })
-        comments.value = response.data.data // 假设后端返回的数据结构中有 data 字段存储评论列表
-
-      }
-      //ElMessage.success(response.data.data)
-    } catch (error) {
-      ElMessage.error('获取评论失败')
-    }
-
-  }else{
-    ElMessage.error()
-  }
-
-  // 通过userId 获取作者信息
-
-  if(localStorage.getItem("token")!==null){
-    const response=await axios.get('http://localhost:8080/myBlog/user/getBlogUserInfo',{
-      params:{
-        userId:post.value.userId
-      },
-      headers:{
-        token:localStorage.getItem('token')
-      }
-    })
-
-    if(response.data.code===200){
-      author.value.id=response.data.data.userId
-      author.value.username=response.data.data.userName
-      author.value.userImage=response.data.data.imageUrl
-      author.value.createTime=response.data.data.createTime
-      author.value.introduction=response.data.data.introduction
-      author.value.blogNum=response.data.data.blogNum
-      author.value.visibleNum=response.data.data.visitedNum
-      author.value.starNum=response.data.data.starNum
-      author.value.isUserStar=response.data.data.isUserStar
-      author.value.kudosNum=response.data.data.kudosNum
-    }
-
-    // 查询此作者的作品
-    const blogResponse=await axios.get('http://localhost:8080/myBlog/user/blog/getBlogByUserId',{
-      params:{
-        userId:post.value.userId,
-        current:current.value
-      }
-    })
-
-    if(blogResponse.data.code===200){
-
-      total.value=blogResponse.data.data.total
-      blogs.value=blogResponse.data.data.pageList
-    }
-
-    console.info(blogs.value)
-
-
-
-  }else{
-    const response=await axios.get('http://localhost:8080/myBlog/user/getBlogUserInfo',{
-      params:{
-        userId:post.value.userId
-      }
-    })
-
-    if(response.data.code===200){
-      author.value.id=response.data.data.userId
-      author.value.username=response.data.data.userName
-      author.value.userImage=response.data.data.imageUrl
-      author.value.createTime=response.data.data.createTime
-      author.value.introduction=response.data.data.introduction
-      author.value.blogNum=response.data.data.blogNum
-      author.value.visibleNum=response.data.data.visitedNum
-      author.value.starNum=response.data.data.starNum
-      author.value.isUserStar=response.data.data.isUserStar
-      author.value.kudosNum=response.data.data.kudosNum
-    }
-    // 查询此作者的作品
-    const blogResponse=await axios.get('http://localhost:8080/myBlog/user/blog/getBlogByUserId',{
-      params:{
-        userId:post.value.userId,
-        current:current.value
-      }
-    })
-
-    if(blogResponse.data.code===200){
-      current.value=blogResponse.data.date.pageNow
-      total.value=blogResponse.data.data.total
-      blogs.value=blogResponse.data.data.pageList
-    }
-  }
-
-
-  const blogResponse=await axios.get('http://localhost:8080/myBlog/user/blog/getBlogByTypeList',{
+const init=async ()=>{
+  const response=await axios.get('http://localhost:8080/myBlog/user/getBlogUserInfo',{
     params:{
-      typeList:post.value.typeList.join(','),
-      current:current.value
+      userId:localStorage.getItem('userId'),
+    },
+    headers:{
+      token:localStorage.getItem('token'),
     }
   })
 
-  if(blogResponse.data.code===200){
+  if(response.data.code===200){
+    author.value.id=response.data.data.id
+    author.value.username=response.data.data.userName
+    author.value.userImage=response.data.data.imageUrl
+    author.value.createTime=response.data.data.createTime
+    author.value.introduction=response.data.data.introduction
+    author.value.blogNum=response.data.data.blogNum
+    author.value.visibleNum=response.data.data.visitedNum
+    author.value.starNum=response.data.data.starNum
+    author.value.kudosNum=response.data.data.kudosNum
+    author.value.isUserStar=response.data.data.isUserStar
 
-    typeBlogs.value=blogResponse.data.data.pageList
+
   }
-
-
-
-
-})
-
-const toggleType = (value) => {
-  activeType.value = value; // 设置当前活动类型
-};
-
-const kudosBlog=async ()=>{
-
-  if(post.value.isUserKudos){
-    // 如果用户点了赞 就取消点赞
-    if(localStorage.getItem("token")===null){
-      ElMessage.warning("出现错误请重新登录")
-    }else{
-      ElMessage.warning(post.value.id)
-
-      const response=await axios.put("http://localhost:8080/myBlog/user/blog/cancelKudos",null,{
-        params:{
-          blogId:post.value.id
-        },
-        headers:{
-          token: localStorage.getItem("token")
-        }
-      })
-
-      if(response.data.code===200){
-        post.value.isUserKudos=false;
-        post.value.kudos--;
-      }
-    }
-  }else{
-    // 反之 就点赞
-    if(localStorage.getItem("token")===null){
-      ElMessage.warning("登录后体验完整功能")
-    }else{
-      ElMessage.warning(post.value.id)
-
-      const response=await axios.put("http://localhost:8080/myBlog/user/blog//kudos",null,{
-        params:{
-          blogId:post.value.id
-        },
-        headers:{
-          token: localStorage.getItem("token")
-        }
-      })
-
-      if(response.data.code===200){
-        post.value.isUserKudos=true;
-        post.value.kudos++;
-      }
-    }
-  }
-}
-
-const StarBlog=async ()=>{
-
-  if(post.value.isUserStar){
-    // 如果用户点了赞 就取消点赞
-    if(localStorage.getItem("token")===null){
-      ElMessage.warning("出现错误请重新登录")
-    }else{
-      ElMessage.warning(post.value.id)
-
-      const response=await axios.put("http://localhost:8080/myBlog/user/blog/cancelStar",null,{
-        params:{
-          blogId:post.value.id
-        },
-        headers:{
-          token: localStorage.getItem("token")
-        }
-      })
-
-      if(response.data.code===200){
-        post.value.isUserStar=false;
-        post.value.star--;
-      }
-    }
-  }else{
-    // 反之 就点赞
-    if(localStorage.getItem("token")===null){
-      ElMessage.warning("登录后体验完整功能")
-    }else{
-      ElMessage.warning(post.value.id)
-
-      const response=await axios.put("http://localhost:8080/myBlog/user/blog/userStar",null,{
-        params:{
-          blogId:post.value.id
-        },
-        headers:{
-          token: localStorage.getItem("token")
-        }
-      })
-
-      if(response.data.code===200){
-        post.value.isUserStar=true;
-        post.value.star++;
-      }
-    }
-  }
-}
-const submitComment = async () => {
-  if (newComment.value.trim() === '') {
-    ElMessage.warning('请输入评论内容')
-    return
-  }
-  try {
-    const response = await axios.post('http://localhost:8080/myBlog/user/blog/addComment', {
-      blogId: post.value.id,
-      context: newComment.value
-    }, {
-      headers: {
-        token: localStorage.getItem('token')
-      }
-    })
-    if (response.data.code === 200) {
-      ElMessage.success('评论发布成功')
-      comments.value.push({
-        context: newComment.value ,
-        replyList:[],
-        userId:localStorage.getItem("userId"),
-        userImage:localStorage.getItem("headImage"),
-        userName:localStorage.getItem("userName"),
-        kudos:0,
-        isUserStar:false,
-        id:response.data.data
-      })
-      newComment.value = ''
-      post.value.commentNum++
-    } else {
-      ElMessage.error('评论发布失败')
-    }
-  } catch (error) {
-    ElMessage.error('评论发布失败')
-  }
-}
-
-const changeCommentDrawer =() => {
-  showCommentDrawer.value = !showCommentDrawer.value;
-  console.info(comments.value)
-
-}
-
-const toggleReplyInput=(index)=>{
-  commentReply.value=''
-  if(replyIndex.value===index){
-    replyIndex.value=-1
-  }else{
-    replyIndex.value=index
-  }
-
 }
 
 // 时间格式的转变
@@ -418,152 +271,6 @@ const formatTime = (timeString) => {
   return new Date(timeString).toLocaleString()
 }
 
-const replyClick=(index)=>{
-  ElMessage.info(index)
-  if(replyListIndex.value===index){
-    replyListIndex.value=-1
-  }else{
-    replyListIndex.value=index
-  }
-}
-
-// 回复评论
-const submitReply=async (comment)=>{
-  if(localStorage.getItem("token")===null){
-    ElMessage.warning("登录后体验完整功能")
-  }else{
-    if (commentReply.value.trim() === '') {
-      ElMessage.warning('请输入评论内容')
-      return
-    }
-
-    ElMessage.warning(comment.id)
-
-    const response=await axios.post('http://localhost:8080/myBlog/user/blog/replyComment',{
-      commentId: comment.id,
-      context: commentReply.value
-    },{
-      headers: {
-        token: localStorage.getItem('token')
-      }
-    })
-
-    if (response.data.code === 200) {
-      ElMessage.success('回复发布成功')
-      comment.replyList.push({
-        context: commentReply.value ,
-        userId:localStorage.getItem("userId"),
-        userImage:localStorage.getItem("headImage"),
-        userName:localStorage.getItem("userName"),
-        isUserKudos:false,
-        kudos:0,
-        id:response.data.data
-      })
-      commentReply.value = ''
-      post.value.commentNum++
-    } else {
-      ElMessage.error('评论发布失败')
-    }
-  }
-}
-
-const kudosComment=async (comment)=>{
-
-  if(comment.isUserKudos){
-    // 如果用户点了赞 就取消点赞
-    if(localStorage.getItem("token")===null){
-      ElMessage.warning("出现错误请重新登录")
-    }else{
-      ElMessage.warning(post.value.id)
-
-      const response=await axios.get("http://localhost:8080/myBlog/user/blog/kudosComment",{
-        params:{
-          commentId:comment.id,
-          bytes:2
-        },
-        headers:{
-          token: localStorage.getItem("token")
-        }
-      })
-
-      if(response.data.code===200){
-        comment.isUserKudos=false;
-        comment.kudos --;
-      }
-    }
-  }else{
-    // 反之 就点赞
-    if(localStorage.getItem("token")===null){
-      ElMessage.warning("登录后体验完整功能")
-    }else{
-      ElMessage.warning(post.value.id)
-
-      const response=await axios.get("http://localhost:8080/myBlog/user/blog/kudosComment",{
-        params:{
-          commentId:comment.id,
-          bytes:1
-        },
-        headers:{
-          token: localStorage.getItem("token")
-        }
-      })
-
-      if(response.data.code===200){
-        comment.isUserKudos=true;
-        comment.kudos ++;
-      }
-    }
-  }
-}
-
-const kudosReply=async (reply)=>{
-
-  if(reply.isUserKudos){
-    // 如果用户点了赞 就取消点赞
-    if(localStorage.getItem("token")===null){
-      ElMessage.warning("出现错误请重新登录")
-    }else{
-      ElMessage.warning(post.value.id)
-
-      const response=await axios.get("http://localhost:8080/myBlog/user/blog/kudosReply",{
-        params:{
-          replyId:reply.id,
-          bytes:2
-        },
-        headers:{
-          token: localStorage.getItem("token")
-        }
-      })
-
-      if(response.data.code===200){
-        reply.isUserKudos=false;
-        reply.kudos --;
-      }
-    }
-  }else{
-    // 反之 就点赞
-    if(localStorage.getItem("token")===null){
-      ElMessage.warning("登录后体验完整功能")
-    }else{
-      ElMessage.warning(post.value.id)
-
-      const response=await axios.get("http://localhost:8080/myBlog/user/blog/kudosReply",{
-        params:{
-          replyId:reply.id,
-          bytes:1
-        },
-        headers:{
-          token: localStorage.getItem("token")
-        }
-      })
-
-      if(response.data.code===200){
-        reply.isUserKudos=true;
-        reply.kudos ++;
-      }
-    }
-  }
-}
 
 // 阅读文章
 const readArticle = async (articleId) => {
@@ -609,44 +316,10 @@ const readArticle = async (articleId) => {
   }
 }
 
-const statBlogAuthor=async ()=>{
-
-  if(localStorage.getItem('token')===null){
-    ElMessage.warning("登陆后体验完整功能")
-  }else{
-
-    const response=await axios.put('http://localhost:8080/myBlog/user/starBlogAuthor',null,{
-      params:{
-        authorId:author.value.id
-      },
-      headers:{
-        token:localStorage.getItem("token")
-      }
-    })
-
-    if(response===200){
-      author.value.isUserStar=true;
-      author.value.kudosNum++;
-    }
-  }
-}
-
-const cancelStatBlogAuthor=async ()=>{
-  const response=await axios.put('http://localhost:8080/myBlog/user/cancelStarBlogAuthor',null,{
-    params:{
-      authorId:author.value.id
-    },
-    headers:{
-      token:localStorage.getItem("token")
-    }
-  })
-
-  if(response===200){
-    author.value.isUserStar=false;
-    author.value.kudosNum--;
-  }
-}
-
+// 设置自定义请求头
+const uploadHeaders = computed(() => ({
+  'token':localStorage.getItem('token'),
+}));
 
 </script>
 
@@ -660,66 +333,14 @@ const cancelStatBlogAuthor=async ()=>{
 
 }
 
-
-
-.but1 {
-  margin: 10px;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-}
-
-.but1.active {
-  background-color: blue; /* 蓝色 */
-  color: white; /* 按钮文字颜色 */
-}
-
 .types h4{
   color: #9c9999;
 }
 
-.contextClass{
-  margin: 10px;
-  border: #9c9999 solid 1px;
-}
+
 
 .contextClass div{
   margin: 10px;
-}
-
-.artclass{
-  margin-right: 10px;
-}
-
-.icon-class{
-  font-size:20px;
-
-}
-
-.icon-span{
-  font-size: 20px;
-  margin-right: 30px;
-}
-
-.comment-item {
-  margin-bottom: 30px;
-  word-break:normal;
-  width:auto;
-  display:block;
-  white-space:pre-wrap;
-  word-wrap : break-word ;
-  overflow: hidden ;
-}
-
-.reply-item{
-  margin-bottom: 30px;
-  word-break:normal;
-  width:auto;
-  display:block;
-  white-space:pre-wrap;
-  word-wrap : break-word ;
-  overflow: hidden ;
-  margin-left: 40px;
 }
 
 .avatar {
@@ -729,10 +350,7 @@ const cancelStatBlogAuthor=async ()=>{
   margin-right: 8px;
   object-fit: cover;
 }
-.context{
-  margin-top: 10px;
-  margin-left: 40px;
-}
+
 .user-info {
   display: flex;
   align-items: center;
@@ -743,44 +361,17 @@ const cancelStatBlogAuthor=async ()=>{
   margin-left: 40px;
 }
 
-.icon-comment{
-
-  font-size:20px;
-
-}
-
-.comment-kudos{
-  margin-right: 40px;
-}
-
 .icon-comment span{
   display: inline-block;
   margin-left: 5px;
   font-size:20px;
 }
 
-.icon-reply{
-  font-size:15px;
-  margin-right: 40px;
-  color: #636161;
-}
 
 .icon-reply span{
   display: inline-block;
   margin-left: 5px;
   font-size:20px;
-}
-
-.icons{
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-.textarea-reply{
-  width:500px;
-  margin-top: 10px;
-  margin-bottom: 10px;
-
 }
 
 .author-info {
@@ -794,13 +385,6 @@ const cancelStatBlogAuthor=async ()=>{
   height: 100%;
 ;
 }
-
-.author-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-}
-
 .author-info h3 {
   margin: 10px 0;
 }
@@ -810,7 +394,8 @@ const cancelStatBlogAuthor=async ()=>{
 }
 
 .blog-post{
-  width:1000px
+  width:1300px;
+  height: 100%;
 }
 
 .card-group{
@@ -818,18 +403,17 @@ const cancelStatBlogAuthor=async ()=>{
   gap: 20px
 }
 
-.blogList{
-  margin-top: 50px;
-}
-
-.title{
-  text-overflow:ellipsis;/*超出部分省略号表示*/
-  overflow:hidden;/*超出部分隐藏*/
-}
-.same-blog{
-  width: 300px;
-  height: 100%;
+.userSpace{
+  display: flex;
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
 
 }
 
+.avatar-preview {
+  width: 50px; /* 调整预览头像的大小 */
+  height: 50px;
+  border-radius: 50%;
+  margin-top: 10px;
+}
 </style>
