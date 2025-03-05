@@ -28,6 +28,7 @@
           :editor="editorRef"
           :defaultConfig="toolbarConfig"
           :mode="mode"
+
       />
       <Editor
           style="height: 300px; overflow-y: hidden;margin: 0"
@@ -88,9 +89,11 @@ const blog=ref({
   title:'',
   context:'',
   introduce:'',
-  userId:1,
+  userId:localStorage.getItem('userId'),
+  userName:localStorage.getItem('userName'),
   status:1,
-  typeList:[]
+  typeList:[],
+  text:'' /*纯文本  用于上传到ai中进行检索*/
 })
 
 // 编辑器实例 用shallowRdf
@@ -105,7 +108,14 @@ const introduce=ref('')
 
 const context=ref('')
 
-const toolbarConfig = {}
+const toolbarConfig = {
+  // 隐藏视频
+  excludeKeys:[
+      'insertVideo',
+      'uploadVideo',
+      'group-video'
+  ]
+}
 const editorConfig = {placeholder:'输入内容', MENU_CONF: {}}
 
 // 配置上传图片的地址与信息
@@ -130,15 +140,21 @@ const submitBlog=async()=>{
   blog.value.typeList=typeList.value
   blog.value.introduce=introduce.value
 
+  var htmlValue=valueHtml.value
+
   console.log(blog.value)
+  htmlValue=htmlValue.replace(/<(style|script|iframe)[^>]*?>[\s\S]+?<\/\1\s*>/gi,'').replace(/<[^>]+?>/g,'').replace(/\s+/g,' ').replace(/ /g,' ').replace(/>/g,' ');
+
+  blog.value.text=htmlValue;
+  console.info("纯文本："+htmlValue)
 
   const response=await axios.post("http://localhost:8080/myBlog/user/blog/write",blog.value,{
     headers:{
       "token":localStorage.getItem("token")
     }
   });
-  if(response.code===200){
-    this.message.info(response.msg)
+  if(response.data.code===200){
+    this.message.info(response.data.msg)
   }
 
 }

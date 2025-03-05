@@ -9,12 +9,15 @@
       <el-menu-item index="/home" class="menu-link">
         <router-link to="/home" class="router-logo">书易网</router-link>
       </el-menu-item>
-      <el-menu-item index="/editor" class="menu-link">
-        <router-link to="/editor" class="router-link">撰写</router-link>
+      <el-menu-item index="/home" class="menu-link">
+        <router-link to="/home" class="router-link">首页</router-link>
       </el-menu-item>
-      <el-menu-item index="/reader" class="menu-link">
-        <router-link to="/reader" class="router-link">阅读</router-link>
-      </el-menu-item>
+<!--      <el-menu-item index="/editor" class="menu-link">-->
+<!--        <router-link to="/editor" class="router-link">撰写</router-link>-->
+<!--      </el-menu-item>-->
+<!--      <el-menu-item index="/reader" class="menu-link">-->
+<!--        <router-link to="/reader" class="router-link">阅读</router-link>-->
+<!--      </el-menu-item>-->
       <el-menu-item index="/userCenter/userBlogs" class="menu-link">
         <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>
       </el-menu-item>
@@ -34,6 +37,9 @@
               </el-dropdown-item>
               <el-dropdown-item>Settings</el-dropdown-item>
               <el-dropdown-item @click="logout">Logout</el-dropdown-item>
+              <el-menu-item index="/editor" class="menu-link">
+                  <router-link to="/editor" class="router-link">撰写</router-link>
+              </el-menu-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -102,7 +108,10 @@
           <el-input v-model="registerForm.confirmPassword" type="password" />
         </el-form-item>
         <el-form-item label="性别">
-          <el-input v-model="registerForm.sex" type="password" />
+          <el-select v-model="registerForm.sex" placeholder="请选择性别">
+            <el-option label="男" value=1></el-option>
+            <el-option label="女" value=0></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="邮箱">
           <el-input v-model="registerForm.email"  placeholder="请输入您的个人邮件 当您忘记密码是会用到" />
@@ -158,7 +167,7 @@ const registerForm = ref({
   username: '',
   password: '',
   confirmPassword: '',
-  sex: '',
+  sex: 0,
   email: ''
 })
 
@@ -240,13 +249,44 @@ const login = async () => {
 }
 
 // 注册逻辑
-const register = () => {
+const register = async() => {
   // 这里添加实际的注册逻辑
   if (registerForm.value.password !== registerForm.value.confirmPassword) {
     ElMessage.error('两次密码不一致')
     return
   }
 
+  if(registerForm.value.username===''){
+    ElMessage.error('用户名不可为空')
+    return
+  }
+
+  if(registerForm.value.email===''){
+    ElMessage.error("邮箱不可为空")
+  }else{
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(form.value.email)) {
+      ElMessage.error("邮箱格式u不正确");
+      return
+    }
+  }
+
+  const response=await axios.post('http://localhost:8080/myBlog/user/register',registerForm.value)
+
+  if(response.deta.code===200){
+    localStorage.setItem('token',response.data.data.token);
+    ElMessage.success(localStorage.getItem('token'))
+    localToken.value=localStorage.getItem('token');
+    headImage.value="http://localhost:8080/myBlog/user/getHead/"+response.data.data.imageUrl;
+    localStorage.setItem('headImage',headImage.value);
+    userName.value=response.data.data.username
+    localStorage.setItem('userName',userName.value);
+    localStorage.setItem('userId',response.data.data.id)
+    registerDialogVisible.value=false
+    ElMessage.success("注册成功")
+  }else{
+    ElMessage.error("注册失败")
+  }
   // 模拟注册成功
   ElMessage.success('注册成功')
   switchToLogin()

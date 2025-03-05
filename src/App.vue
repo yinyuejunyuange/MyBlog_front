@@ -1,6 +1,7 @@
 <script setup>
 import Edtor from "@/components/editor/Edtor.vue";
 import Navigation from "@/navigation/Navigation.vue";
+import AiChat from "@/components/aiChat/AiChat.vue";
 
 </script>
 
@@ -12,6 +13,10 @@ import Navigation from "@/navigation/Navigation.vue";
   <main>
 <!--    <edtor/>-->
     <RouterView></RouterView>
+
+      <AiChat></AiChat>
+
+
   </main>
 </template>
 
