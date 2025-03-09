@@ -12,15 +12,77 @@
       <el-menu-item index="/home" class="menu-link">
         <router-link to="/home" class="router-link">首页</router-link>
       </el-menu-item>
-<!--      <el-menu-item index="/editor" class="menu-link">-->
-<!--        <router-link to="/editor" class="router-link">撰写</router-link>-->
-<!--      </el-menu-item>-->
-<!--      <el-menu-item index="/reader" class="menu-link">-->
-<!--        <router-link to="/reader" class="router-link">阅读</router-link>-->
-<!--      </el-menu-item>-->
       <el-menu-item index="/userCenter/userBlogs" class="menu-link">
         <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>
       </el-menu-item>
+    </div>
+
+
+    <div class="search-container" id="search">
+      <el-input
+          v-model="searchQuery"
+          placeholder="搜索"
+          @focus="showDropdown = true"
+          clearable
+      />
+
+        <div
+            v-if="showDropdown"
+            class="showDrop"
+        >
+          <div  >
+            <!-- 历史搜索 左侧 -->
+            <div class="search_history ">
+              <h3 class="text-gray-600 font-semibold mb-3">历史搜索   <span @click="removeAllSearch" class="remove-history"><el-icon><Delete /></el-icon></span></h3>
+              <div style="overflow-y: scroll;max-height: 230px">
+                <el-menu class="el-style">
+                  <h4 v-if="history.length===0"> 暂无记录 </h4>
+                  <el-menu-item
+                      v-for="(item, index) in history"
+                      :key="index"
+                      class="flex items-center justify-between px-2 py-1.5 hover:bg-gray-100 rounded cursor-pointer group"
+                      @mouseover="hoveredHistoryIndex = index"
+                      @mouseleave="hoveredHistoryIndex = -1"
+                      @click=" clickHistorySearch(index)"
+                  >
+                    <span class="text-gray-700">{{ item }}
+                    </span>
+                    <el-icon
+                        v-if="hoveredHistoryIndex === index"
+                        class="text-gray-400 hover:text-red-500 transition-colors absolute right-2 top-1/2 transform -translate-y-1/2"
+                        @click.stop="removeHistoryItem(index)"
+                    >
+                      <Close />
+                    </el-icon>
+                  </el-menu-item>
+                </el-menu>
+              </div>
+            </div>
+
+            <!-- 搜索发现 右侧 -->
+            <div class="search_find">
+              <h3 class="text-gray-600 font-semibold mb-3">搜索发现</h3>
+              <div style="overflow-y: scroll;max-height: 230px">
+                <el-menu>
+                  <h4 v-if="discover.length===0"> 登录后查看 </h4>
+                  <el-menu-item
+                      v-for="(item, index) in discover"
+                      :key="index"
+                      class="search_card"
+                      @click="clickDiscoverSearch(index)"
+                  >
+                    {{item}}
+                  </el-menu-item>
+                </el-menu>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+    <div class="search-button">
+      <el-button @click="searchBlog">
+        <el-icon><Search /></el-icon>
+      </el-button>
     </div>
 
     <div class="user-area">
@@ -83,7 +145,6 @@
           </div>
         </el-form-item>
 
-
         <el-form-item>
           <el-button type="primary" @click="login">登录</el-button>
           <el-button @click="switchToRegister">切换到注册</el-button>
@@ -140,12 +201,16 @@
   </el-menu>
 </template>
 
+
 <script setup>
-import {ref} from 'vue'
+import {onMounted, ref} from 'vue'
 import {ElMessage} from 'element-plus'
+import {Delete,Search} from '@element-plus/icons-vue'
 import axios from 'axios';
 
 import { inject } from 'vue';
+import {Close} from "@element-plus/icons-vue";
+import router from "@/router/router.js";
 
 // 状态管理
 const localToken = ref(localStorage.getItem('token'))
@@ -154,6 +219,14 @@ const userAvatar = ref('path/to/avatar.jpg')
 const userName = ref(localStorage.getItem('userName'))
 const codeRef = ref()
 const headImage=ref(localStorage.getItem('headImage'))
+
+
+const searchQuery = ref('')
+const showDropdown = ref(false)
+const hoveredHistoryIndex = ref(-1)
+const history= ref([])
+const discover=ref([])
+const searchWord=ref('')
 
 // 登录表单
 const loginForm = ref({
@@ -170,6 +243,149 @@ const registerForm = ref({
   sex: 0,
   email: ''
 })
+
+onMounted(async ()=>{
+  window.addEventListener('click', handleClick)
+  // 绑定全局监听器
+
+  if(localStorage.getItem('token')===null){
+    history.value=localStorage.getItem('history')
+  }else{
+    const historyResponse=await axios.get('http://localhost:8080/myBlog/user/getUserSearch',{
+      headers:{
+        token:localStorage.getItem('token'),
+      }
+    })
+
+    if(historyResponse.data.code===200){
+      history.value=historyResponse.data.data
+    }
+
+    const response=await axios.get('http://localhost:8080/myBlog/user/getHotSearch',{
+      headers:{
+        token:localStorage.getItem('token'),
+      }
+    })
+
+    if(response.data.code===200){
+      discover.value=response.data.data
+    }
+  }
+})
+
+const clickHistorySearch=(index)=>{
+  const valueElement = history.value[index];
+  showDropdown.value=false
+
+  router.push({
+    path:'/searchPage',
+    query:{
+      post: valueElement
+    }
+  })
+
+}
+
+const clickDiscoverSearch=(index)=>{
+  const valueElement = discover.value[index];
+  showDropdown.value=false
+  router.push({
+    path:'/searchPage',
+    query:{
+      post: valueElement
+    }
+  })
+
+
+}
+
+
+const handleBlur = () => {
+  // 稍微延迟隐藏，让点击事件有机会触发
+  showDropdown.value = false
+}
+
+const handleClick=(event)=> {
+
+  console.info("123")
+
+  const div = document.getElementById("search")
+  const x=event.clientX
+  const y=event.clientY
+  const divx1 = div.offsetLeft
+  const divy1 = div.offsetTop
+  const divx2 = div.offsetLeft + div.offsetWidth
+  const divy2 = div.offsetTop + div.offsetHeight
+  if( x < divx1 || x > divx2 || y < divy1 || y > divy2){
+    handleBlur()
+  }
+
+  // const targetDiv = this.$refs.targetDiv;
+  //
+  // // 获取目标 div 的位置信息
+  // const rect = targetDiv.getBoundingClientRect();
+  //
+  // // 检查点击位置是否在目标 div 内
+  // const isInDiv =
+  //     event.clientX >= rect.left &&
+  //     event.clientX <= rect.right &&
+  //     event.clientY >= rect.top &&
+  //     event.clientY <= rect.bottom;
+  //
+  // if (isInDiv) {
+  //   this.executeAction();
+  // }
+}
+
+
+const removeHistoryItem = async (index) => {
+  if(localStorage.getItem('token')===null){
+    history.value.splice(index, 1)
+    localStorage.setItem('history',history.value)
+  }else{
+    const response=await axios.delete('http://localhost:8080/myBlog/user/deleteUserSearchByName',{
+
+      params:{
+        name: history.value[index]
+      },
+      headers:{
+        token:localStorage.getItem('token'),
+      }
+    })
+
+    if(response.data.code===200){
+      ElMessage.success("删除成功")
+      history.value.splice(index, 1)
+    }else{
+      ElMessage.error("删除失败")
+    }
+  }
+}
+
+const removeAllSearch= async ()=>{
+
+  if(history.value.length===0){
+    ElMessage.warning("无记录可删除")
+    return
+  }
+
+  if(localStorage.getItem('token')!==null){
+    const response=await axios.delete('http://localhost:8080/myBlog/user/deleteUserAllSearch',{
+      headers:{
+        token:localStorage.getItem('token'),
+      }
+    })
+
+    if(response.data.code===200){
+      ElMessage.success("删除成功")
+    }else{
+      ElMessage.error("删除失败")
+    }
+  }else{
+    history.value=[];
+    localStorage.setItem('history',history.value);
+  }
+}
 
 // 弹窗控制
 const loginDialogVisible = ref(false)
@@ -199,6 +415,20 @@ const switchToLogin = () => {
 const switchToRegister = () => {
   loginDialogVisible.value = false
   registerDialogVisible.value = true
+}
+
+// 通过关键字搜索博客
+const searchBlog= ()=>{
+
+  history.value.push(searchQuery.value)
+  localStorage.setItem('history',history.value)
+
+  router.push({
+    path:'/searchPage',
+    query:{
+      post: searchQuery.value
+    }
+  })
 }
 
 // 登录逻辑
@@ -339,7 +569,7 @@ const logout = () => {
 
 .menu-items {
   display: flex;
-
+  align-items: center;
 }
 
 .router-link {
@@ -410,4 +640,54 @@ const logout = () => {
   cursor: pointer;
   border-radius: 4px;
 }
+
+.search-container {
+  position: absolute;
+  width: 50%; /* 约1/3宽度 */
+  margin: 0 1rem;
+  top: 15px;
+  left: 400px;
+}
+
+.showDrop{
+  display: flex;
+  position: relative; /*// 位置相对于父目录*/
+  top:0;
+  z-index: 99;
+  background: #fff;
+  border: #6fb2dd solid 1px;
+  height: 300px;
+
+}
+
+.search_find {
+  position: absolute;
+  top:0;
+  left: 480px;
+  display: inline-block;
+  width: 450px;
+}
+
+.search_history{
+  position: relative;
+  top:0;
+  display: inline-block;
+  width: 450px;
+  margin-left: 15px;
+}
+
+.remove-history{
+  float: right;
+}
+
+h4{
+  color: #717171;
+}
+
+.search-button{
+  position: absolute;
+  right: 490px;
+}
+
+
 </style>

@@ -1,30 +1,5 @@
 <template>
   <div class="blog-container flex p-4">
-    <!-- 左侧分类列表 -->
-    <div class="left-block w-64 mr-4">
-      <el-menu
-          class="category-menu"
-      >
-        <el-menu default-active="0" @select="handleCategorySelect">
-          <el-menu-item index="0">
-            <span>综合</span>
-          </el-menu-item>
-          <el-menu-item index="BEFORE_END">前端</el-menu-item>
-          <el-menu-item index="VUE">Vue</el-menu-item>
-          <el-menu-item index="HTML">HTML</el-menu-item>
-          <el-menu-item index="CSS">CSS</el-menu-item>
-          <el-menu-item index="JAVASCRIPT">JavaScript</el-menu-item>
-          <el-menu-item index="AFTER_END">后端</el-menu-item>
-          <el-menu-item index="JAVA">Java</el-menu-item>
-          <el-menu-item index="PYTHON">Python</el-menu-item>
-          <el-menu-item index="C11">C++</el-menu-item>
-          <el-menu-item index="C">C</el-menu-item>
-          <el-menu-item index="COMPUTER">计算机</el-menu-item>
-          <el-menu-item index="OS">操作系统</el-menu-item>
-        </el-menu>
-      </el-menu>
-    </div>
-
     <!-- 文章列表区域 -->
     <div class="middle-block flex-grow overflow-auto max-h-[800px]">
       <div class="articles-list space-y-4">
@@ -37,18 +12,7 @@
         >
           <div class="flex flex-col">
             <h2 class="title">{{ article.title }}</h2>
-            <p class="summary">{{ article.introduce }}</p>
-
-<!--            <div class="flex justify-between items-center">-->
-<!--              <div class="text-sm text-gray-500 space-x-2">-->
-<!--                <el-tag type="info">{{ article.userName }}</el-tag>-->
-<!--                <el-tag type="info">{{ formatTime(article.createTime) }}</el-tag>-->
-<!--              </div>-->
-
-<!--              <div class="text-sm text-gray-500 space-x-2">-->
-<!--              -->
-<!--              </div>-->
-<!--            </div>-->
+            <p class="summary">{{ article.introduce }}</p>>
             <div class="items-in-list">
               <div class="text-sm text-gray-500 space-x-2">
                 <div class="artclass">
@@ -117,35 +81,20 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import axios   from "axios";
 import router from "@/router/router.js";
+import {onBeforeRouteUpdate, useRoute} from "vue-router";
 
 
 // 文章列表数据
 const articles = ref([])
+
+const searchKey=ref('')
 
 // 分页相关
 const total = ref()  // 总文章数
 const pageSize = ref()  // 每页文章数
 const currentPage=ref(1) // 当前页数
 const type=ref("0") // 默认综合 没有选择
-
-// 处理分类选择
-const handleCategorySelect = (index) => {
-
-  type.value=index
-
-  ElMessage({
-    message: `选中分类：${index}`,
-    type: 'info'
-  })
-
-  getBlogPage()
-
-  // 这里可以添加根据分类筛选文章的逻辑
-}
-
-// 处理分页变化
 const handlePageChange = (currentPages) => {
-
 
   currentPage.value=currentPages
 
@@ -154,7 +103,7 @@ const handlePageChange = (currentPages) => {
     type: 'success'
   })
   // 这里可以添加获取新页面文章的逻辑
-  getBlogPage()
+  getBlogPageBySearch()
 }
 
 
@@ -228,11 +177,14 @@ const formatTime = (timeString) => {
 }
 
 // 获取 首页博客 方法
-const getBlogPage=async ()=>{
-  if(type.value==="0"){
-    const response=await axios.get("http://localhost:8080/myBlog/user/blog/getBlogList",{
+const getBlogPageBySearch=async ()=>{
+
+  // 判断当前用户是否已经登录
+  if(localStorage.getItem('token')===null){
+    const response=await axios.get("http://localhost:8080/myBlog/user/blog/getBlogByName",{
       params:{
-        pageNow: currentPage.value
+        current: currentPage.value,
+        blogName: searchKey.value,
       }
     })
     if(response.data.code===200){
@@ -242,10 +194,13 @@ const getBlogPage=async ()=>{
       currentPage.value=response.data.data.pageNow
     }
   }else{
-    const response=await axios.get("http://localhost:8080/myBlog/user/blog/getBlogList",{
+    const response=await axios.get("http://localhost:8080/myBlog/user/blog/getBlogByName",{
       params:{
-        pageNow: currentPage.value,
-        type: type.value
+        current: currentPage.value,
+        blogName: searchKey.value,
+      },
+      headers:{
+        token: localStorage.getItem('token')
       }
     })
     if(response.data.code===200){
@@ -259,7 +214,15 @@ const getBlogPage=async ()=>{
 
 // 页面加载时的初始操作
 onMounted(async () => {
-  getBlogPage()
+  // 通过路由获取 参数 然后再本地查询
+  const route=useRoute()
+  if(route.query.post){
+    let param=route.query.post
+    searchKey.value=param;
+    getBlogPageBySearch()
+  }else{
+    ElMessage.error("参数错误")
+  }
 
   const response=await axios.get("http://localhost:8080/myBlog/user/blog/getHotBlog",{})
   if(response.data.code===200){
@@ -268,11 +231,21 @@ onMounted(async () => {
     ElMessage.error("搜索失败")
   }
 
-  ElMessage({
-    message: '博客首页加载成功',
-    type: 'success'
-  })
 })
+
+onBeforeRouteUpdate((to, from, next) => {
+  if (to.query.post) {
+    searchKey.value = to.query.post;
+    getBlogPageBySearch(); // 路由参数变化时获取新数据
+  } else {
+    ElMessage.error("参数错误");
+  }
+  next(); // 确保继续导航
+});
+
+
+
+
 </script>
 
 <style scoped>
@@ -280,6 +253,7 @@ onMounted(async () => {
   display: flex;
   height: 85vh;
   overflow: hidden;
+  margin-left: 200px;
 }
 
 .article-item {

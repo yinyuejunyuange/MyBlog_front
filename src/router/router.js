@@ -7,6 +7,7 @@ import UserCenter from "@/components/userCenter/UserCenter.vue";
 import UserStar from "@/components/userStar/UserStar.vue";
 import UserAttention from "@/components/userAttention/UserAttention.vue";
 import UserBlogs from "@/components/userBlogs/UserBlogs.vue";
+import Search from "@/components/Search/Search.vue";
 
 const routes = [
     {
@@ -47,6 +48,11 @@ const routes = [
             }
         ]
     },
+    {
+        path: '/searchPage',
+        name:'SearchPage',
+        component: Search,
+    }
 ]
 
 const router = createRouter({
