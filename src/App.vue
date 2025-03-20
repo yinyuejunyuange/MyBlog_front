@@ -13,10 +13,7 @@ import AiChat from "@/components/aiChat/AiChat.vue";
   <main>
 <!--    <edtor/>-->
     <RouterView></RouterView>
-
       <AiChat></AiChat>
-
-
   </main>
 </template>
 

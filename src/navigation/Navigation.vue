@@ -86,6 +86,12 @@
     </div>
 
     <div class="user-area">
+
+      <span @click="hiddendanger" class="notification-icon">
+        消息
+        <div v-if="messageCount > 0" class="notification-badge">{{ messageCount }}</div>
+      </span>
+
       <template v-if="localToken">
         <el-dropdown>
           <span class="user-info">
@@ -227,7 +233,9 @@ const hoveredHistoryIndex = ref(-1)
 const history= ref([])
 const discover=ref([])
 const searchWord=ref('')
+const messageCount=ref(0)
 
+let eventSource = null;
 // 登录表单
 const loginForm = ref({
   username: '',
@@ -271,7 +279,43 @@ onMounted(async ()=>{
       discover.value=response.data.data
     }
   }
+
+  connectToSSE(localStorage.getItem('userId'))
 })
+
+const connectToSSE = (userId) => {
+  eventSource = new EventSource(`http://localhost:8080/task/sse/connect?userId=${userId}`);
+
+  eventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (typeof data === 'boolean' && data === true) {
+      // 处理心跳消息
+      console.log('接收到心跳消息');
+    } else {
+      // 处理实际数据
+      if(messageCount.value !==data){
+        messageCount.value = data;
+        ElMessage.success(`您有 ${data} 条新公告`)
+      }
+    }
+  };
+
+  eventSource.onerror = (error) => {
+    console.error('EventSource 连接出错:', error);
+    if (retryCount < maxRetries) {
+      // 增加重试计数器
+      retryCount++;
+      // 计算延迟时间，每次重试增加一倍的延迟
+      const delay = initialDelay * (2 ** (retryCount - 1));
+      setTimeout(() => {
+        connectToSSE(userId);
+      }, delay);
+    } else {
+      // 达到最大重连次数，关闭连接
+      eventSource.close();
+    }
+  };
+};
 
 const clickHistorySearch=(index)=>{
   const valueElement = history.value[index];
@@ -689,5 +733,25 @@ h4{
   right: 490px;
 }
 
+.notification-icon {
+  color: #636161;
+  position: relative;
+  top:5px;
+  right: 50px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -10px;
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 </style>
