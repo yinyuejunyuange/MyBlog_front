@@ -87,10 +87,37 @@
 
     <div class="user-area">
 
-      <span @click="hiddendanger" class="notification-icon">
-        消息
-        <div v-if="messageCount > 0" class="notification-badge">{{ messageCount }}</div>
+      <span @mouseover="notificationsVisible = true" @mouseleave="notificationsVisible = false" class="notification-icon">
+        公告
+        <div v-if="messageCount > 99" class="notification-badge">
+          99+
+        </div>
+        <div v-else-if="messageCount > 0" class="notification-badge">
+          {{messageCount}}
+        </div>
+
+        <div v-if="notificationsVisible" class="announcement-list"
+             @scroll="handleScorll">
+          <el-menu v-if="notifications.length>0"
+          >
+            <el-menu-item
+              v-for="(notification, index) in notifications"
+              :key="index"
+              @click="openAnnouncement(notification)"
+          >
+            {{ notification.title}}
+              <div v-if="!notification.isUserRead" class="notification-item-badge">
+
+              </div>
+
+          </el-menu-item>
+          </el-menu>
+          <div v-else  class="no_announcement">
+            <h1 >暂无公告</h1>
+          </div>
+        </div>
       </span>
+
 
       <template v-if="localToken">
         <el-dropdown>
@@ -120,6 +147,16 @@
         </span>
       </template>
     </div>
+
+    <!-- 公告内容弹窗 -->
+    <el-dialog
+        v-model="announcementDialogVisible"
+        title="公告内容"
+        width="500px"
+    >
+      <div>{{ selectedAnnouncement.content }}</div>
+      <el-button @click="announcementDialogVisible = false">关闭</el-button>
+    </el-dialog>
 
     <!-- 登录弹窗 -->
     <el-dialog
@@ -226,6 +263,13 @@ const userName = ref(localStorage.getItem('userName'))
 const codeRef = ref()
 const headImage=ref(localStorage.getItem('headImage'))
 
+const notificationsVisible =ref(false)
+const notifications=ref([])
+const announcementDialogVisible=ref(false)
+const selectedAnnouncement=ref({})
+
+
+
 
 const searchQuery = ref('')
 const showDropdown = ref(false)
@@ -241,6 +285,7 @@ const loginForm = ref({
   username: '',
   password: ''
 })
+
 
 
 // 注册表单
@@ -279,9 +324,55 @@ onMounted(async ()=>{
       discover.value=response.data.data
     }
   }
-
   connectToSSE(localStorage.getItem('userId'))
+
+  await getAnnouncement()
+
 })
+
+const openAnnouncement=async (select)=>{
+  selectedAnnouncement.value=select
+  announcementDialogVisible.value=true
+
+  //todo  实现消除红点
+  const response=await axios.put("http://localhost:8080/myBlog/user/readAnnouncement", {}, {
+    headers: {
+      token: localStorage.getItem('token')
+    },
+    params: {
+      announcementId: select.id
+    }
+  })
+
+  if(response.data.code===200){
+    select.isUserRead=true
+    messageCount.value--;
+  }else{
+    ElMessage.error(response.data.msg)
+  }
+
+}
+
+let currentIndex=ref(1)
+// 获取公告
+const getAnnouncement=async ()=>{
+  const response=await axios.get('http://localhost:8080/myBlog/user/getAnnouncement', {
+    headers: {
+    token: localStorage.getItem('token')
+    },
+    params:{
+      currentIndex:currentIndex.value,
+    }
+  })
+
+  if(response.data.code===200){
+    notifications.value.push(...response.data.data);
+    console.info(notifications.value);
+  }else{
+    ElMessage.error(response.data.msg)
+  }
+
+}
 
 const connectToSSE = (userId) => {
   eventSource = new EventSource(`http://localhost:8080/task/sse/connect?userId=${userId}`);
@@ -339,8 +430,15 @@ const clickDiscoverSearch=(index)=>{
       post: valueElement
     }
   })
+}
 
+const handleScorll=async (e)=>{
+  const {scrollTop,clientHeight,scrollHeight}=e.target
 
+  if(scrollTop+clientHeight===scrollHeight){
+    currentIndex.value+=1;
+    await getAnnouncement()
+  }
 }
 
 
@@ -404,6 +502,11 @@ const removeHistoryItem = async (index) => {
       ElMessage.error("删除失败")
     }
   }
+}
+
+const showAnnouncement= async()=>{
+  notificationsVisible.value=true
+
 }
 
 const removeAllSearch= async ()=>{
@@ -752,6 +855,39 @@ h4{
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.notification-item-badge {
+  height: 8px;
+  position: absolute;
+  top: -5px;
+  right: 0;
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.announcement-list {
+  position: absolute;
+  background: white;
+  border: 1px solid #d3d3d3;
+  z-index: 1000;
+  right: -100px;
+  top:18px;
+  width: 500px; /* 可以根据需要调整宽度 */
+  height: 500px;
+  overflow-y: auto; /* 启用垂直滚动 */
+}
+
+.no_announcement{
+  color: #636161;
+  text-align: center; /* 文本水平居中 */
+  padding: 10px; /* 添加内边距以增加可读性 */
 }
 
 </style>
