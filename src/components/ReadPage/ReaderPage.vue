@@ -28,6 +28,11 @@
                 :style="{color: 'gray'}">
               <span>已关注</span>
             </el-button>
+            <el-button
+                @click="statBlogAuthor"
+                type="warning">
+              <span @click="reportUser(author)">举 报</span>
+            </el-button>
 
           </div>
 
@@ -70,6 +75,9 @@
                        :style="{color: post.isUserKudos? '#1E90FF': 'gray'}"
                        @click="kudosBlog"><Pointer /></el-icon>
               <span class="icon-span">{{ post.kudos }}</span>
+
+              <el-button type="warning" class="report_blog" @click="openReportBlog" >举 报</el-button>
+
             </div>
           </div>
         </div>
@@ -140,8 +148,17 @@
                 </span>
               <span
                   class="icon-reply"
-                  @click="toggleReplyInput(index)">回复</span>
+                  @click="toggleReplyInput(index)">回复
               </span>
+
+              <span
+                    class="icon-reply"
+                    @click="reportComment(comment)">举报
+              </span>
+
+              </span>
+
+
             </div>
             <div v-if="replyIndex===index">
               <el-input class="textarea-reply"
@@ -170,6 +187,7 @@
                           :style="{color: reply.isUserKudos?'#1E90FF':'gray'}"
                           @click="kudosReply(reply)"><Pointer /></el-icon>
                     <span class="comment-kudos">{{ reply.kudos }}</span>
+                    <span class="icon-reply" @click="reportReply(reply)">举报</span>
                   </span>
                 </div>
               </div>
@@ -187,7 +205,82 @@
         <el-button @click="submitComment">发布评论</el-button>
       </template>
     </el-drawer>
+  </div>
 
+  <div>
+    <el-dialog title="举报博客" v-model="dialogBlogVisible">
+      <el-form>
+        <el-form-item label="举报描述">
+          <el-input
+              type="textarea"
+              v-model="reportBlog.content"
+              placeholder="请输入举报描述"
+              rows="4"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogBlogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitBlogReport">确 定</el-button>
+      </span>
+    </el-dialog>
+  </div>
+
+  <div>
+    <el-dialog title="举报评论" v-model="dialogCommentVisible">
+      <el-form>
+        <el-form-item label="举报描述">
+          <el-input
+              type="textarea"
+              v-model="reportCommentForm.content"
+              placeholder="请输入举报描述"
+              rows="4"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogCommentVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitCommentReport">确 定</el-button>
+      </span>
+    </el-dialog>
+  </div>
+
+  <div>
+    <el-dialog title="举报回复" v-model="dialogReplyVisible">
+      <el-form>
+        <el-form-item label="举报描述">
+          <el-input
+              type="textarea"
+              v-model="reportReplyForm.content"
+              placeholder="请输入举报描述"
+              rows="4"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogReplyVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitReplyReport">确 定</el-button>
+      </span>
+    </el-dialog>
+  </div>
+
+  <div>
+    <el-dialog title="举报用户" v-model="dialogUserVisible">
+      <el-form>
+        <el-form-item label="举报描述">
+          <el-input
+              type="textarea"
+              v-model="reportUserForm.content"
+              placeholder="请输入举报描述"
+              rows="4"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogUserVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitUserReport">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -262,6 +355,123 @@ const activeType = ref(null);
 const replyIndex=ref(-1)
 
 const replyListIndex=ref(-1) // 回复列表
+
+
+const dialogUserVisible=ref(false)
+const reportUserForm=ref({
+  userId:'',
+  content:''
+})
+
+const reportUser=(comment)=>{
+  dialogUserVisible.value=true
+  reportUserForm.value.userId=comment.id
+}
+
+const submitUserReport=async ()=>{
+  const response=await axios.put('http://localhost:8080/myBlog/user/reportUser',{
+    userId:reportUserForm.value.userId,
+    content:reportUserForm.value.content,
+  },{
+    headers:{
+      token:localStorage.getItem('token')
+    }
+  })
+  if(response.data.code===200){
+    ElMessage.success('举报成功')
+  }else{
+    ElMessage.error(response.data.msg)
+  }
+
+}
+
+
+const dialogReplyVisible=ref(false)
+const reportReplyForm=ref({
+  replyId:'',
+  content:''
+})
+
+const reportReply=(comment)=>{
+  dialogReplyVisible.value=true
+  reportReplyForm.value.replyId=comment.id
+}
+
+const submitReplyReport=async ()=>{
+  const response=await axios.put('http://localhost:8080/myBlog/user/reportReply',{
+    replyId:reportReplyForm.value.replyId,
+    content:reportReplyForm.value.content,
+  },{
+    headers:{
+      token:localStorage.getItem('token')
+    }
+  })
+  if(response.data.code===200){
+    ElMessage.success('举报成功')
+  }else{
+    ElMessage.error(response.data.msg)
+  }
+
+}
+
+
+
+const dialogCommentVisible=ref(false)
+const reportCommentForm=ref({
+  commentId:'',
+  content:''
+})
+
+const reportComment=(comment)=>{
+  dialogCommentVisible.value=true
+  reportCommentForm.value.commentId=comment.id
+}
+
+const submitCommentReport=async ()=>{
+  const response=await axios.put('http://localhost:8080/myBlog/user/reportComment',{
+    commentId:reportCommentForm.value.commentId,
+    content:reportCommentForm.value.content,
+  },{
+    headers:{
+      token:localStorage.getItem('token')
+    }
+  })
+  if(response.data.code===200){
+    ElMessage.success('举报成功')
+  }else{
+    ElMessage.error(response.data.msg)
+  }
+
+}
+
+
+
+const dialogBlogVisible=ref(false)
+const reportBlog=ref({
+  blogId:'',
+  content:''
+})
+
+const openReportBlog=()=>{
+  reportBlog.value.blogId= post.value.id
+  dialogBlogVisible.value=true;
+}
+const submitBlogReport=async ()=>{
+  const response=await axios.put('http://localhost:8080/myBlog/user/reportBlog',{
+      blogId:reportBlog.value.blogId,
+      content:reportBlog.value.content,
+  },{
+    headers:{
+      token:localStorage.getItem('token')
+    }
+  })
+  if(response.data.code===200){
+    ElMessage.success('举报成功')
+  }else{
+    ElMessage.error(response.data.msg)
+  }
+
+}
 
 const typeNames = computed(() => {
   if(post.value.typeList!==undefined){
@@ -925,7 +1135,7 @@ const cancelStatBlogAuthor=async ()=>{
 
 .icon-reply{
   font-size:15px;
-  margin-right: 40px;
+  margin-right: 20px;
   color: #636161;
 }
 
@@ -994,6 +1204,10 @@ const cancelStatBlogAuthor=async ()=>{
   width: 300px;
   height: 100%;
 
+}
+.report_blog{
+  position: relative;
+  left: 650px;
 }
 
 </style>
