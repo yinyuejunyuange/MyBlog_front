@@ -1,9 +1,12 @@
 <template>
   <!-- 外层 Grid 容器：分为两行，第一行分类栏，第二行博客列表+热门排行 -->
   <div class="home_container">
-    <div class="type-btn">
-      <typeScroll/>
+    <div class="home-section">
+      <div class="type-btn">
+        <typeScroll/>
+      </div>
     </div>
+
 
     <!-- 第二行左侧：博客列表（跨9列 = 12列的3/4） -->
     <div class="theme-container" >
@@ -17,6 +20,7 @@
               </div>
 
             </div>
+
             <div
                 class="article-item"
                 v-for="article in articles"
@@ -84,33 +88,11 @@ import { View } from '@element-plus/icons-vue'  // 补充引入View图标
 import { homeBlogs, readBlog } from '@/api/blog.js'
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 import typeScroll from "./components/typesScroll.vue"
+import * as byPrefixAndName from "@fortawesome/free-solid-svg-icons";
 
 
 // 文章列表数据
 const articles = ref([])
-
-// 分页相关
-const total = ref(0)  // 初始化总文章数为0，避免undefined
-const pageSize = ref(10)
-const currentPage = ref(1)
-const type = ref("0")
-
-// 处理分类选择
-const handleCategorySelect = (index) => {
-  type.value = index
-  getBlogPage()
-}
-
-// 处理分页变化
-const handlePageChange = (currentPages) => {
-  currentPage.value = currentPages
-  ElMessage({
-    message: `切换到第 ${currentPages} 页`,
-    type: 'success'
-  })
-  getBlogPage()
-}
-
 // 阅读文章
 const readArticle = async (articleId) => {
   await readBlog(articleId).then(res => {
@@ -177,6 +159,9 @@ onMounted(async () => {
 <style scoped>
 
 .home_container{
+  position: relative;
+  top: 80px;
+  left: 150px;
   background: #fff;
   display: flex; /*开启FLEX布局*/
   flex-wrap: wrap; /*取消自动换行*/
@@ -190,6 +175,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.home-section{
+  flex: 1;
 }
 
 .theme-container{
@@ -254,6 +243,15 @@ onMounted(async () => {
   flex-wrap: nowrap;
   gap: 1rem;
   margin-top: 0.5rem;
+}
+
+@media (max-width: 800px) {
+  .right-container{
+    display: none;
+  }
+  .home_container{
+    left: 50px;
+  }
 }
 
 </style>

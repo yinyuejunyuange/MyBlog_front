@@ -1,32 +1,7 @@
-<!-- 界面左侧菜单栏 -->
-<script setup lang="ts">
-import { ref } from 'vue'; // 引入ref创建响应式变量
-// 定义两个板块的菜单数据（结构化管理，方便后续扩展）
-const menuSection1 = [
-  { label: "首页", key: "home" },
-  { label: "下载", key: "download" },
-  { label: "学习", key: "study" },
-  { label: "社区", key: "community" }
-];
-
-const menuSection2 = [
-  { label: "关注", key: "follow" },
-  { label: "收藏", key: "collect" },
-  { label: "历史", key: "history" },
-  { label: "创作中心", key: "create" }
-];
-
-const activeKey = ref('');
-
-// 核心：菜单项点击事件，更新激活状态
-const handleMenuItemClick = (key: string) => {
-  activeKey.value = key;
-};
-</script>
-
 <template>
   <!-- 左侧菜单栏外层容器 -->
   <div class="left-menu-container">
+
     <!-- 板块1：首页、下载、学习、社区 -->
     <div class="menu-section">
       <div
@@ -36,7 +11,13 @@ const handleMenuItemClick = (key: string) => {
           @click="handleMenuItemClick(item.key)"
           :class="{ active: activeKey === item.key }"
       >
-        <h3 > {{ item.label }}</h3>
+
+       <div>
+         <h3>
+           <FontAwesomeIcon :icon="item.icon" />
+           <span class="menu-item-label" >{{ item.label }}</span>
+         </h3>
+       </div>
       </div>
     </div>
 
@@ -52,15 +33,45 @@ const handleMenuItemClick = (key: string) => {
           @click="handleMenuItemClick(item.key)"
           :class="{ active: activeKey === item.key }"
       >
-        <h4>{{ item.label }}</h4>
+        <div>
+          <h3><font-awesome-icon :icon="item.icon" />
+            <span class="menu-item-label" >{{ item.label }}</span>
+          </h3>
+        </div>
       </div>
     </div>
   </div>
 </template>
+<!-- 界面左侧菜单栏 -->
+<script setup lang="ts">
+import { ref } from 'vue';
+import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
+import * as byPrefixAndName from "@fortawesome/free-solid-svg-icons"; // 引入ref创建响应式变量
+// 定义两个板块的菜单数据（结构化管理，方便后续扩展）
+const menuSection1 = [
+  { label: "首页", key: "home" ,icon: "fa-solid fa-house" },
+  { label: "下载", key: "download" ,icon:"fa-solid fa-download"},
+  { label: "学习", key: "study" , icon: "fa-solid fa-layer-group"},
+  { label: "社区", key: "community", icon: "fa-regular fa-building" },
+];
 
+const menuSection2 = [
+  { label: "关注", key: "follow" ,icon: "far fa-heart" },
+  { label: "收藏", key: "collect" ,icon: "far fa-star"},
+  { label: "历史", key: "history" ,icon: "fa-solid fa-clock-rotate-left"},
+  { label: "创作中心", key: "create" ,icon: "fa-solid fa-pencil"},
+];
+
+const activeKey = ref('');
+
+// 核心：菜单项点击事件，更新激活状态
+const handleMenuItemClick = (key: string) => {
+  activeKey.value = key;
+};
+</script>
 <style scoped>
 .left-menu-container{
-  width: 40%;
+  width: 50%;
 }
 
 .menu-item {
@@ -97,7 +108,22 @@ const handleMenuItemClick = (key: string) => {
 .menu-divider {
   border-top: 1px solid #d4d6dc;
 }
+@media (max-width: 800px) {
+  .menu-item-label{
+    display: none;
+  }
+}
+/* 针对 某项容器的响应式修改该 */
+/*.menu-section{
+  min-width: 100px;
+  container-type: inline-size; !* 开启容器查询，基于板块自身宽度 *!
+  container-name: menu-section; !* 给容器命名，方便后续查询 *!
+}
 
-
+@container menu-section (max-width: 150px) {
+  .menu-item-label{
+    display: none;
+  }
+}*/
 
 </style>

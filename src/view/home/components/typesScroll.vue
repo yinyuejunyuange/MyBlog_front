@@ -92,7 +92,7 @@ const handleCategorySelect = (index) => {
   display: flex;
   /* 核心补充 1：盒模型优化，保证宽度包含内边距/边框，不溢出 */
   box-sizing: border-box;
-  max-width: 150vh;
+  max-width: 80vw;
   min-width: 40vh;
   gap: 1rem;
   padding-bottom: 0.5rem;
@@ -102,7 +102,6 @@ const handleCategorySelect = (index) => {
 .types-list{
   overflow: hidden;
   display: flex;
-  flex: 1;
   gap: 1rem;
   overflow-x: auto ; /*允许横向滚动*/
   scroll-behavior: smooth; /*平滑滚动*/
@@ -117,7 +116,7 @@ const handleCategorySelect = (index) => {
 }
 .scroll-btn{
   position: relative;
-  top: -0.5vh
+  top: -0.5vh;
 }
 
 

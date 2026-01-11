@@ -1,25 +1,26 @@
 <template>
-  <el-menu
-      :default-active="activeMenu"
-      class="navbar"
-      mode="horizontal"
-  >
-    <div class="menu-items">
-      <el-menu-item index="/home" class="menu-link">
-        <router-link to="/home" class="router-logo">书易网</router-link>
-      </el-menu-item>
-<!--      <el-menu-item index="/userCenter/userBlogs" class="menu-link">-->
-<!--        <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>-->
-<!--      </el-menu-item>-->
-    </div>
+  <div class="navigation" >
+    <el-menu
+        :default-active="activeMenu"
+        class="navbar"
+        mode="horizontal"
+    >
+      <div class="menu-items">
+        <el-menu-item index="/home" class="menu-link">
+          <router-link to="/home" class="router-logo">书易网</router-link>
+        </el-menu-item>
+        <!--      <el-menu-item index="/userCenter/userBlogs" class="menu-link">-->
+        <!--        <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>-->
+        <!--      </el-menu-item>-->
+      </div>
 
-    <div class="search-container" id="search">
-      <el-input
-          v-model="searchQuery"
-          placeholder="搜索"
-          @focus="showDropdown = true"
-          clearable
-      />
+      <div class="search-container" id="search">
+        <el-input
+            v-model="searchQuery"
+            placeholder="搜索"
+            @focus="showDropdown = true"
+            clearable
+        />
 
         <div
             v-if="showDropdown"
@@ -73,14 +74,14 @@
             </div>
           </div>
         </div>
-    </div>
-    <div class="search-button">
-      <el-button @click="searchBlog">
-        <el-icon><Search /></el-icon>
-      </el-button>
-    </div>
+      </div>
+      <div class="search-button">
+        <el-button @click="searchBlog">
+          <el-icon><Search /></el-icon>
+        </el-button>
+      </div>
 
-    <div class="user-area">
+      <div class="user-area">
       <span @mouseover="notificationsVisible = true" @mouseleave="notificationsVisible = false" class="notification-icon">
         公告
         <div v-if="messageCount > 99" class="notification-badge">
@@ -95,10 +96,10 @@
           <el-menu v-if="notifications.length>0"
           >
             <el-menu-item
-              v-for="(notification, index) in notifications"
-              :key="index"
-              @click="openAnnouncement(notification)"
-          >
+                v-for="(notification, index) in notifications"
+                :key="index"
+                @click="openAnnouncement(notification)"
+            >
             {{ notification.title}}
               <div v-if="!notification.isUserRead" class="notification-item-badge">
 
@@ -113,129 +114,131 @@
       </span>
 
 
-      <template v-if="localToken">
-        <el-dropdown>
+        <template v-if="localToken">
+          <el-dropdown>
           <span class="user-info">
             <img :src="headImage" alt="User Avatar" class="avatar" />
             {{ userName }}
           </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item>
-                <button>一个按钮</button>
-              </el-dropdown-item>
-              <el-dropdown-item>Settings</el-dropdown-item>
-              <el-dropdown-item @click="logout">Logout</el-dropdown-item>
-              <el-menu-item index="/editor" class="menu-link">
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item>
+                  <button>一个按钮</button>
+                </el-dropdown-item>
+                <el-dropdown-item>Settings</el-dropdown-item>
+                <el-dropdown-item @click="logout">Logout</el-dropdown-item>
+                <el-menu-item index="/editor" class="menu-link">
                   <router-link to="/editor" class="router-link">撰写</router-link>
-              </el-menu-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </template>
-      <template v-else>
+                </el-menu-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </template>
+        <template v-else>
         <span class="auth-links">
           <a href="#" @click.prevent="openLoginModal">登录</a>
           <span class="separator">|</span>
           <a href="#" @click.prevent="openRegisterModal">注册</a>
         </span>
-      </template>
-    </div>
+        </template>
+      </div>
 
-    <!-- 公告内容弹窗 -->
-    <el-dialog
-        v-model="announcementDialogVisible"
-        title="公告内容"
-        width="500px"
-    >
-      <div>{{ selectedAnnouncement.content }}</div>
-      <el-button @click="announcementDialogVisible = false">关闭</el-button>
-    </el-dialog>
+      <!-- 公告内容弹窗 -->
+      <el-dialog
+          v-model="announcementDialogVisible"
+          title="公告内容"
+          width="500px"
+      >
+        <div>{{ selectedAnnouncement.content }}</div>
+        <el-button @click="announcementDialogVisible = false">关闭</el-button>
+      </el-dialog>
 
-    <!-- 登录弹窗 -->
-    <el-dialog
-        v-model="loginDialogVisible"
-        title="登录"
-        width="500px"
-    >
-      <el-form :model="loginForm" label-width="100px">
-        <el-form-item label="用户名">
-          <el-input v-model="loginForm.username" />
-        </el-form-item>
-        <el-form-item label="密码">
-          <el-input v-model="loginForm.password" type="password" />
-        </el-form-item>
+      <!-- 登录弹窗 -->
+      <el-dialog
+          v-model="loginDialogVisible"
+          title="登录"
+          width="500px"
+      >
+        <el-form :model="loginForm" label-width="100px">
+          <el-form-item label="用户名">
+            <el-input v-model="loginForm.username" />
+          </el-form-item>
+          <el-form-item label="密码">
+            <el-input v-model="loginForm.password" type="password" />
+          </el-form-item>
 
-        <el-form-item label="验证码">
-          <div class="verify-code-container">
-            <el-input
-                v-model="codeRef"
-                placeholder="请输入验证码"
-                class="verify-code-input"
-            />
-            <el-image
-                :src="verifyCodeImage"
-                alt="验证码"
-                class="verify-code-image"
-                @click="fetchVerifyCode"
-            />
-          </div>
-        </el-form-item>
+          <el-form-item label="验证码">
+            <div class="verify-code-container">
+              <el-input
+                  v-model="codeRef"
+                  placeholder="请输入验证码"
+                  class="verify-code-input"
+              />
+              <el-image
+                  :src="verifyCodeImage"
+                  alt="验证码"
+                  class="verify-code-image"
+                  @click="fetchVerifyCode"
+              />
+            </div>
+          </el-form-item>
 
-        <el-form-item>
-          <el-button type="primary" @click="login">登录</el-button>
-          <el-button @click="switchToRegister">切换到注册</el-button>
-        </el-form-item>
-      </el-form>
-    </el-dialog>
+          <el-form-item>
+            <el-button type="primary" @click="login">登录</el-button>
+            <el-button @click="switchToRegister">切换到注册</el-button>
+          </el-form-item>
+        </el-form>
+      </el-dialog>
 
-    <!-- 注册弹窗 -->
-    <el-dialog
-        v-model="registerDialogVisible"
-        title="注册"
-        width="500px"
-    >
-      <el-form :model="registerForm" label-width="100px">
-        <el-form-item label="用户名">
-          <el-input v-model="registerForm.username" />
-        </el-form-item>
-        <el-form-item label="密码">
-          <el-input v-model="registerForm.password" type="password" />
-        </el-form-item>
-        <el-form-item label="确认密码">
-          <el-input v-model="registerForm.confirmPassword" type="password" />
-        </el-form-item>
-        <el-form-item label="性别">
-          <el-select v-model="registerForm.sex" placeholder="请选择性别">
-            <el-option label="男" value=1></el-option>
-            <el-option label="女" value=0></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="registerForm.email"  placeholder="请输入您的个人邮件 当您忘记密码是会用到" />
-        </el-form-item>
-        <el-form-item label="验证码">
-          <div class="verify-code-container">
-            <el-input
-                v-model="codeRef"
-                placeholder="请输入验证码"
-                class="verify-code-input"
-            />
-            <el-image
-                :src="verifyCodeImage"
-                alt="验证码"
-                class="verify-code-image"
-                @click="fetchVerifyCode"
-            />
-          </div>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="register">注册</el-button>
-          <el-button @click="switchToLogin">切换到登录</el-button>
-        </el-form-item>
-      </el-form>
-    </el-dialog>
-  </el-menu>
+      <!-- 注册弹窗 -->
+      <el-dialog
+          v-model="registerDialogVisible"
+          title="注册"
+          width="500px"
+      >
+        <el-form :model="registerForm" label-width="100px">
+          <el-form-item label="用户名">
+            <el-input v-model="registerForm.username" />
+          </el-form-item>
+          <el-form-item label="密码">
+            <el-input v-model="registerForm.password" type="password" />
+          </el-form-item>
+          <el-form-item label="确认密码">
+            <el-input v-model="registerForm.confirmPassword" type="password" />
+          </el-form-item>
+          <el-form-item label="性别">
+            <el-select v-model="registerForm.sex" placeholder="请选择性别">
+              <el-option label="男" value=1></el-option>
+              <el-option label="女" value=0></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="邮箱">
+            <el-input v-model="registerForm.email"  placeholder="请输入您的个人邮件 当您忘记密码是会用到" />
+          </el-form-item>
+          <el-form-item label="验证码">
+            <div class="verify-code-container">
+              <el-input
+                  v-model="codeRef"
+                  placeholder="请输入验证码"
+                  class="verify-code-input"
+              />
+              <el-image
+                  :src="verifyCodeImage"
+                  alt="验证码"
+                  class="verify-code-image"
+                  @click="fetchVerifyCode"
+              />
+            </div>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="register">注册</el-button>
+            <el-button @click="switchToLogin">切换到登录</el-button>
+          </el-form-item>
+        </el-form>
+      </el-dialog>
+    </el-menu>
+  </div>
+
 </template>
 
 
@@ -449,21 +452,6 @@ const handleClick=(event)=> {
     handleBlur()
   }
 
-  // const targetDiv = this.$refs.targetDiv;
-  //
-  // // 获取目标 div 的位置信息
-  // const rect = targetDiv.getBoundingClientRect();
-  //
-  // // 检查点击位置是否在目标 div 内
-  // const isInDiv =
-  //     event.clientX >= rect.left &&
-  //     event.clientX <= rect.right &&
-  //     event.clientY >= rect.top &&
-  //     event.clientY <= rect.bottom;
-  //
-  // if (isInDiv) {
-  //   this.executeAction();
-  // }
 }
 
 
