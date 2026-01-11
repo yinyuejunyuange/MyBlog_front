@@ -287,10 +287,10 @@
 <script setup>
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
 import { View ,StarFilled ,ChatSquare ,Pointer,ChatDotSquare} from '@element-plus/icons-vue'
-
+import {getBlogBySelectTypeList, getBlogBySelectUserId, getBlogComments} from '@/api/blog'
 import { onBeforeUnmount, ref, shallowRef, onMounted ,computed} from 'vue'
 import { ElButton, ElInput ,ElMessage} from 'element-plus'
-import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import { getUserInfo } from '@/api/user/user.js'
 import axios from 'axios';
 
 import router from "@/router/router.js";
@@ -510,131 +510,47 @@ onMounted(async ()=>{
     post.value.isUserKudos=parse.isUserKudos;
     post.value.isUserStar=parse.isUserStar;
     post.value.userId=parse.userId
-
-    console.log(parse)
-
     // 向后端查询所有评论
     try {
-      if(localStorage.getItem("token")!==null){
-        const response = await axios.get('http://localhost:8080/myBlog/user/blog/getComment', {
-          params: {
-            blogId: parse.id
-          },
-          headers: {
-            token: localStorage.getItem('token')
-          }
-        })
-        comments.value = response.data.data // 假设后端返回的数据结构中有 data 字段存储评论列表
-      }else{
-        const response = await axios.get('http://localhost:8080/myBlog/user/blog/getComment', {
-          params: {
-            blogId: parse.id
-          },
-        })
-        comments.value = response.data.data // 假设后端返回的数据结构中有 data 字段存储评论列表
-
-      }
-      //ElMessage.success(response.data.data)
+      getBlogComments(parse.id).then(res=>{
+        if(res.data.code===200){
+          comments.value = res.data.data // 假设后端返回的数据结构中有 data 字段存储评论列表
+        }else {
+          ElMessage.error("获取失败")
+        }
+      })
     } catch (error) {
       ElMessage.error('获取评论失败')
     }
-
   }else{
     ElMessage.error()
   }
-
   // 通过userId 获取作者信息
-
-  if(localStorage.getItem("token")!==null){
-    const response=await axios.get('http://localhost:8080/myBlog/user/getBlogUserInfo',{
-      params:{
-        userId:post.value.userId
-      },
-      headers:{
-        token:localStorage.getItem('token')
-      }
-    })
-
-    if(response.data.code===200){
-      author.value.id=response.data.data.userId
-      author.value.username=response.data.data.userName
-      author.value.userImage=response.data.data.imageUrl
-      author.value.createTime=response.data.data.createTime
-      author.value.introduction=response.data.data.introduction
-      author.value.blogNum=response.data.data.blogNum
-      author.value.visibleNum=response.data.data.visitedNum
-      author.value.starNum=response.data.data.starNum
-      author.value.isUserStar=response.data.data.isUserStar
-      author.value.kudosNum=response.data.data.kudosNum
+  getUserInfo(post.value.userId).then(res=>{
+    if(res.data.code===200){
+      author.value.id=res.data.data.userId
+      author.value.username=res.data.data.userName
+      author.value.userImage=res.data.data.imageUrl
+      author.value.createTime=res.data.data.createTime
+      author.value.introduction=res.data.data.introduction
+      author.value.blogNum=res.data.data.blogNum
+      author.value.visibleNum=res.data.data.visitedNum
+      author.value.starNum=res.data.data.starNum
+      author.value.isUserStar=res.data.data.isUserStar
+      author.value.kudosNum=res.data.data.kudosNum
     }
-
-    // 查询此作者的作品
-    const blogResponse=await axios.get('http://localhost:8080/myBlog/user/blog/getBlogByUserId',{
-      params:{
-        userId:post.value.userId,
-        current:current.value
-      }
-    })
-
-    if(blogResponse.data.code===200){
-
-      total.value=blogResponse.data.data.total
-      blogs.value=blogResponse.data.data.pageList
-    }
-
-    console.info(blogs.value)
-
-
-
-  }else{
-    const response=await axios.get('http://localhost:8080/myBlog/user/getBlogUserInfo',{
-      params:{
-        userId:post.value.userId
-      }
-    })
-
-    if(response.data.code===200){
-      author.value.id=response.data.data.userId
-      author.value.username=response.data.data.userName
-      author.value.userImage=response.data.data.imageUrl
-      author.value.createTime=response.data.data.createTime
-      author.value.introduction=response.data.data.introduction
-      author.value.blogNum=response.data.data.blogNum
-      author.value.visibleNum=response.data.data.visitedNum
-      author.value.starNum=response.data.data.starNum
-      author.value.isUserStar=response.data.data.isUserStar
-      author.value.kudosNum=response.data.data.kudosNum
-    }
-    // 查询此作者的作品
-    const blogResponse=await axios.get('http://localhost:8080/myBlog/user/blog/getBlogByUserId',{
-      params:{
-        userId:post.value.userId,
-        current:current.value
-      }
-    })
-
-    if(blogResponse.data.code===200){
-      current.value=blogResponse.data.date.pageNow
-      total.value=blogResponse.data.data.total
-      blogs.value=blogResponse.data.data.pageList
-    }
-  }
-
-
-  const blogResponse=await axios.get('http://localhost:8080/myBlog/user/blog/getBlogByTypeList',{
-    params:{
-      typeList:post.value.typeList.join(','),
-      current:current.value
+  })
+  // 查询当前作者编写的博客
+  getBlogBySelectUserId(post.value.userId).then(res=>{
+    if(res.data.code===200){
+      total.value=res.data.data.total
+      blogs.value=res.data.data.pageList
     }
   })
 
-  if(blogResponse.data.code===200){
-
-    typeBlogs.value=blogResponse.data.data.pageList
-  }
-
-
-
+  getBlogBySelectTypeList(post.value.typeList.join(',')).then(res=>{
+    typeBlogs.value=res.data.data.pageList
+  })
 
 })
 
@@ -643,7 +559,6 @@ const toggleType = (value) => {
 };
 
 const kudosBlog=async ()=>{
-
   if(post.value.isUserKudos){
      // 如果用户点了赞 就取消点赞
     if(localStorage.getItem("token")===null){
@@ -672,7 +587,7 @@ const kudosBlog=async ()=>{
     }else{
       ElMessage.warning(post.value.id)
 
-      const response=await axios.put("http://localhost:8080/myBlog/user/blog//kudos",null,{
+      const response=await axios.put("http://localhost:8080/myBlog/user/blog/kudos",null,{
         params:{
           blogId:post.value.id
         },
@@ -690,7 +605,6 @@ const kudosBlog=async ()=>{
 }
 
 const StarBlog=async ()=>{
-
   if(post.value.isUserStar){
     // 如果用户点了赞 就取消点赞
     if(localStorage.getItem("token")===null){
@@ -706,7 +620,6 @@ const StarBlog=async ()=>{
           token: localStorage.getItem("token")
         }
       })
-
       if(response.data.code===200){
         post.value.isUserStar=false;
         post.value.star--;
@@ -718,7 +631,6 @@ const StarBlog=async ()=>{
       ElMessage.warning("登录后体验完整功能")
     }else{
       ElMessage.warning(post.value.id)
-
       const response=await axios.put("http://localhost:8080/myBlog/user/blog/userStar",null,{
         params:{
           blogId:post.value.id

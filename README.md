@@ -27,3 +27,8 @@ npm run dev
 ```sh
 npm run build
 ```
+
+### 添加依赖
+```sh
+npm install @fortawesome/vue-fontawesome @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/free-regular-svg-icons --save
+```

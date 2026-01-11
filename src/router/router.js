@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import Editor from '@/components/editor/Edtor.vue'
-import ReaderPage from "@/components/ReadPage/ReaderPage.vue";
-import Home from "@/components/home/Home.vue"
-import UserCenter from "@/components/userCenter/UserCenter.vue";
-import UserStar from "@/components/userStar/UserStar.vue";
-import UserAttention from "@/components/userAttention/UserAttention.vue";
-import UserBlogs from "@/components/userBlogs/UserBlogs.vue";
-import Search from "@/components/Search/Search.vue";
+import ReaderPage from "@/view/ReadPage/ReaderPage.vue";
+import Home from "@/view/home/Home.vue"
+import UserCenter from "@/view/userCenter/UserCenter.vue";
+import UserStar from "@/view/userStar/UserStar.vue";
+import UserAttention from "@/view/userAttention/UserAttention.vue";
+import UserBlogs from "@/view/userBlogs/UserBlogs.vue";
+import Search from "@/view/Search/Search.vue";
 
 const routes = [
     {
@@ -23,6 +23,10 @@ const routes = [
         path:'/userStar',
         name:'userStar',
         component:UserStar,
+    },
+    {
+        path:'/',
+        redirect:'/home',
     },
     {
         path:'/home',

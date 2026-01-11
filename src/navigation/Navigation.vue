@@ -4,19 +4,14 @@
       class="navbar"
       mode="horizontal"
   >
-
     <div class="menu-items">
       <el-menu-item index="/home" class="menu-link">
         <router-link to="/home" class="router-logo">书易网</router-link>
       </el-menu-item>
-      <el-menu-item index="/home" class="menu-link">
-        <router-link to="/home" class="router-link">首页</router-link>
-      </el-menu-item>
-      <el-menu-item index="/userCenter/userBlogs" class="menu-link">
-        <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>
-      </el-menu-item>
+<!--      <el-menu-item index="/userCenter/userBlogs" class="menu-link">-->
+<!--        <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>-->
+<!--      </el-menu-item>-->
     </div>
-
 
     <div class="search-container" id="search">
       <el-input
@@ -86,7 +81,6 @@
     </div>
 
     <div class="user-area">
-
       <span @mouseover="notificationsVisible = true" @mouseleave="notificationsVisible = false" class="notification-icon">
         公告
         <div v-if="messageCount > 99" class="notification-badge">
@@ -248,12 +242,11 @@
 <script setup>
 import {onMounted, ref} from 'vue'
 import {ElMessage} from 'element-plus'
-import {Delete,Search} from '@element-plus/icons-vue'
+import {Close, Delete, Search} from '@element-plus/icons-vue'
 import axios from 'axios';
-
-import { inject } from 'vue';
-import {Close} from "@element-plus/icons-vue";
 import router from "@/router/router.js";
+import {getCode, userLogin, userRegister, verifyCode} from "@/api/user/auth.js";
+import {RequestHeadItems, X_VERIFY_TOKEN} from "@/utils/headItem/headItem.js"
 
 // 状态管理
 const localToken = ref(localStorage.getItem('token'))
@@ -367,7 +360,6 @@ const getAnnouncement=async ()=>{
 
   if(response.data.code===200){
     notifications.value.push(...response.data.data);
-    console.info(notifications.value);
   }else{
     ElMessage.error(response.data.msg)
   }
@@ -380,8 +372,6 @@ const connectToSSE = (userId) => {
   eventSource.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (typeof data === 'boolean' && data === true) {
-      // 处理心跳消息
-      console.log('接收到心跳消息');
     } else {
       // 处理实际数据
       if(messageCount.value !==data){
@@ -392,7 +382,6 @@ const connectToSSE = (userId) => {
   };
 
   eventSource.onerror = (error) => {
-    console.error('EventSource 连接出错:', error);
     if (retryCount < maxRetries) {
       // 增加重试计数器
       retryCount++;
@@ -448,8 +437,6 @@ const handleBlur = () => {
 }
 
 const handleClick=(event)=> {
-
-  console.info("123")
 
   const div = document.getElementById("search")
   const x=event.clientX
@@ -588,40 +575,31 @@ const login = async () => {
   }else if(codeRef.value===null){
     ElMessage.warning("验证码不可为空")
   }else{
-    const checkResponse=await axios.get("http://localhost:8080/myBlog/user/verify/checkCode",{
-      params: {
-        code: codeRef.value
-      },
-      headers:{
-        'verifyToken': verifyToken.value
-      }
-    })
-    if(checkResponse.data.code===200){
-      ElMessage.success('验证码验证成功')
+   verifyCode(codeRef.value,verifyToken.value).then(res=>{
+     if(res.data.code===200){
+       ElMessage.success('验证码验证成功')
+       userLogin(loginForm.value).then(res=>{
+         if(res.data.code===200){
+           localStorage.setItem('token',res.data.data.token);
+           ElMessage.success(localStorage.getItem('token'))
+           localToken.value=localStorage.getItem('token');
+           headImage.value="http://localhost:8080/myBlog/user/getHead/"+res.data.data.imageUrl;
+           localStorage.setItem('headImage',headImage.value);
+           userName.value=res.data.data.username
+           localStorage.setItem('userName',userName.value);
+           localStorage.setItem('userId',res.data.data.id)
+           loginDialogVisible.value=false
+           ElMessage.success("登录成功")
+           // location.reload()
 
-      //ElMessage.success('验证成功')
-      const loginResponse=await axios.post("http://localhost:8080/myBlog/user/login",loginForm.value)
-
-      if(loginResponse.data.code===200){
-        localStorage.setItem('token',loginResponse.data.data.token);
-        ElMessage.success(localStorage.getItem('token'))
-        localToken.value=localStorage.getItem('token');
-        headImage.value="http://localhost:8080/myBlog/user/getHead/"+loginResponse.data.data.imageUrl;
-        localStorage.setItem('headImage',headImage.value);
-        userName.value=loginResponse.data.data.username
-        localStorage.setItem('userName',userName.value);
-        localStorage.setItem('userId',loginResponse.data.data.id)
-        loginDialogVisible.value=false
-        ElMessage.success("登录成功")
-       // location.reload()
-
-      }else{
-        ElMessage.error("登录失败")
-      }
-
-    }else{
-      ElMessage.error("验证码错误")
-    }
+         }else{
+           ElMessage.error("登录失败")
+         }
+       })
+     }else{
+       ElMessage.error("验证码错误")
+     }
+   })
   }
 }
 
@@ -642,28 +620,29 @@ const register = async() => {
     ElMessage.error("邮箱不可为空")
   }else{
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(form.value.email)) {
+    if (!emailPattern.test(registerForm.value.email)) {
       ElMessage.error("邮箱格式u不正确");
       return
     }
   }
 
-  const response=await axios.post('http://localhost:8080/myBlog/user/register',registerForm.value)
-
-  if(response.deta.code===200){
-    localStorage.setItem('token',response.data.data.token);
-    ElMessage.success(localStorage.getItem('token'))
-    localToken.value=localStorage.getItem('token');
-    headImage.value="http://localhost:8080/myBlog/user/getHead/"+response.data.data.imageUrl;
-    localStorage.setItem('headImage',headImage.value);
-    userName.value=response.data.data.username
-    localStorage.setItem('userName',userName.value);
-    localStorage.setItem('userId',response.data.data.id)
-    registerDialogVisible.value=false
-    ElMessage.success("注册成功")
-  }else{
-    ElMessage.error("注册失败")
-  }
+  userRegister(registerForm.value).then(res=>{
+    console.info(res)
+    if(res.data.code===200){
+      localStorage.setItem('token',res.data.data.token);
+      ElMessage.success(localStorage.getItem('token'))
+      localToken.value=localStorage.getItem('token');
+      // headImage.value="http://localhost:8080/myBlog/user/getHead/"+response.data.data.imageUrl;
+      localStorage.setItem('headImage',headImage.value);
+      userName.value=res.data.data.username
+      localStorage.setItem('userName',userName.value);
+      localStorage.setItem('userId',res.data.data.id)
+      registerDialogVisible.value=false
+      ElMessage.success("注册成功")
+    }else{
+      ElMessage.error("注册失败")
+    }
+  })
   // 模拟注册成功
   ElMessage.success('注册成功')
   switchToLogin()
@@ -674,24 +653,19 @@ const verifyCodeImage = ref(null)
 // 获取验证码的方法
 const fetchVerifyCode = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/myBlog/user/verify/getCode', {
-      responseType: 'blob' // 对于图片验证码
+    getCode().then(res=>{
+
+      const X_token = RequestHeadItems.X_VERIFY_TOKEN
+      // 从响应头中获取 verifyToken
+      verifyToken.value= res.headers.get(X_token);
+
+
+      // 创建图片URL
+      verifyCodeImage.value = URL.createObjectURL(new Blob([res.data], {type: 'image/jpeg'}))
     })
-
-    // 从响应头中获取 verifyToken
-    verifyToken.value= response.headers['verifytoken'] ||
-        response.headers.verifytoken ||
-        response.headers.get('verifytoken')
-
-    // ElMessage.success(verifyToken.value)
-    // ElMessage.success(response.headers.get('verifytoken'))
-
-    // 创建图片URL
-    const imageUrl = URL.createObjectURL(new Blob([response.data], { type: 'image/jpeg' }))
-    verifyCodeImage.value = imageUrl
   } catch (error) {
     ElMessage.error('获取验证码失败')
-    console.error(error)
+
   }
 }
 
