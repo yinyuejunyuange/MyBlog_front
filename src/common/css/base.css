@@ -1,9 +1,0 @@
-.base_container{
-    position: relative;
-    top: 100px;
-    background: #fff;
-    display: flex; /*开启FLEX布局*/
-    flex-wrap: wrap; /*自动换行*/
-    width: 90%;
-    gap: 0.1rem;
-}
