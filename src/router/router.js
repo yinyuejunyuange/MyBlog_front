@@ -56,12 +56,20 @@ const routes = [
         path: '/searchPage',
         name:'SearchPage',
         component: Search,
-    }
+    },
 ]
 
 const router = createRouter({
     history: createWebHistory(),
     routes
 })
-
+// 核心添加：全局后置守卫，路由跳转完成后滚动到顶部
+router.afterEach(() => {
+    // 优雅地滚动到顶部
+    window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth' // 平滑滚动效果，兼容现代浏览器
+    });
+});
 export default router

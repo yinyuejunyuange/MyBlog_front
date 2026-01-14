@@ -41,6 +41,11 @@
                 </div>
               </div>
             </div>
+            <div v-if="!articles.length">
+              <el-empty>
+                <i class="iconfont " >&#xe708;</i>
+              </el-empty>
+            </div>
           </div>
         </div>
       </div>
@@ -142,14 +147,14 @@ const getBlogPage = async () => {
 onMounted(async () => {
   try {
     await getBlogPage()
-    const response = await axios.get("http://localhost:8080/myBlog/user/blog/getHotBlog", {})
-    if (response.data.code === 200) {
-      topArticles.value = response.data.data
-    }
-    ElMessage({
-      message: '博客首页加载成功',
-      type: 'success'
-    })
+    // const response = await axios.get("http://localhost:8080/myBlog/user/blog/getHotBlog", {})
+    // if (response.data.code === 200) {
+    //   topArticles.value = response.data.data
+    // }
+    // ElMessage({
+    //   message: '博客首页加载成功',
+    //   type: 'success'
+    // })
   } catch (error) {
     ElMessage.error("初始化失败：" + error.message)
   }
@@ -157,15 +162,14 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-
 .home_container{
   position: relative;
-  top: 80px;
+  top: 100px;
   left: 150px;
   background: #fff;
   display: flex; /*开启FLEX布局*/
   flex-wrap: wrap; /*取消自动换行*/
-  width: 100%;
+  width: 90%;
   gap: 0.1rem;
 }
 
@@ -173,8 +177,8 @@ onMounted(async () => {
   width: 100%;
   background: #fff;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-content: center;
+  justify-content: flex-start;
 }
 
 .home-section{
@@ -209,6 +213,8 @@ onMounted(async () => {
   border-radius: 15px;
 }
 .right-container{
+  position: sticky;
+  top: 10px;
   background: #fff;
   flex: 1;
   min-width: 150px;
@@ -253,5 +259,11 @@ onMounted(async () => {
     left: 50px;
   }
 }
+.iconfont{
+  font-family:"iconfont" !important;
+  font-size:16px;font-style:normal;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-stroke-width: 0.2px;
+  -moz-osx-font-smoothing: grayscale;}
 
 </style>

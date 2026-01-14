@@ -1,120 +1,37 @@
 <template>
   <div class="navigation" >
-    <el-menu
-        :default-active="activeMenu"
-        class="navbar"
-        mode="horizontal"
-    >
-      <div class="menu-items">
-        <el-menu-item index="/home" class="menu-link">
-          <router-link to="/home" class="router-logo">书易网</router-link>
-        </el-menu-item>
-        <!--      <el-menu-item index="/userCenter/userBlogs" class="menu-link">-->
-        <!--        <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>-->
-        <!--      </el-menu-item>-->
+  <!--      <el-menu-item index="/userCenter/userBlogs" class="menu-link">-->
+  <!--        <router-link to="/userCenter/userBlogs" class="router-link">用户中心</router-link>-->
+  <!--      </el-menu-item>-->
+    <div class="first-container" >
+      <div class="logo-container">
+        <router-link to="/home" class="router-logo"><img class="logo" src="/cdcn.png"></router-link>
       </div>
-
       <div class="search-container" id="search">
         <el-input
             v-model="searchQuery"
             placeholder="搜索"
             @focus="showDropdown = true"
             clearable
-        />
-
-        <div
-            v-if="showDropdown"
-            class="showDrop"
         >
-          <div  >
-            <!-- 历史搜索 左侧 -->
-            <div class="search_history ">
-              <h3 class="text-gray-600 font-semibold mb-3">历史搜索   <span @click="removeAllSearch" class="remove-history"><el-icon><Delete /></el-icon></span></h3>
-              <div style="overflow-y: scroll;max-height: 230px">
-                <el-menu class="el-style">
-                  <h4 v-if="history.length===0"> 暂无记录 </h4>
-                  <el-menu-item
-                      v-for="(item, index) in history"
-                      :key="index"
-                      class="flex items-center justify-between px-2 py-1.5 hover:bg-gray-100 rounded cursor-pointer group"
-                      @mouseover="hoveredHistoryIndex = index"
-                      @mouseleave="hoveredHistoryIndex = -1"
-                      @click=" clickHistorySearch(index)"
-                  >
-                    <span class="text-gray-700">{{ item }}
-                    </span>
-                    <el-icon
-                        v-if="hoveredHistoryIndex === index"
-                        class="text-gray-400 hover:text-red-500 transition-colors absolute right-2 top-1/2 transform -translate-y-1/2"
-                        @click.stop="removeHistoryItem(index)"
-                    >
-                      <Close />
-                    </el-icon>
-                  </el-menu-item>
-                </el-menu>
-              </div>
+          <template #append>
+            <div class="search-button">
+              <el-button @click="searchBlog">
+                <el-icon><Search /></el-icon>
+              </el-button>
             </div>
+          </template>
+        </el-input>
+      </div>
 
-            <!-- 搜索发现 右侧 -->
-            <div class="search_find">
-              <h3 class="text-gray-600 font-semibold mb-3">搜索发现</h3>
-              <div style="overflow-y: scroll;max-height: 230px">
-                <el-menu>
-                  <h4 v-if="discover.length===0"> 登录后查看 </h4>
-                  <el-menu-item
-                      v-for="(item, index) in discover"
-                      :key="index"
-                      class="search_card"
-                      @click="clickDiscoverSearch(index)"
-                  >
-                    {{item}}
-                  </el-menu-item>
-                </el-menu>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="search-button">
-        <el-button @click="searchBlog">
-          <el-icon><Search /></el-icon>
-        </el-button>
-      </div>
 
       <div class="user-area">
-      <span @mouseover="notificationsVisible = true" @mouseleave="notificationsVisible = false" class="notification-icon">
+        <div class="notification-container">
+        <span @mouseover="notificationsVisible = true" @mouseleave="notificationsVisible = false" class="notification-icon">
         公告
-        <div v-if="messageCount > 99" class="notification-badge">
-          99+
+        </span>
         </div>
-        <div v-else-if="messageCount > 0" class="notification-badge">
-          {{messageCount}}
-        </div>
-
-        <div v-if="notificationsVisible" class="announcement-list"
-             @scroll="handleScorll">
-          <el-menu v-if="notifications.length>0"
-          >
-            <el-menu-item
-                v-for="(notification, index) in notifications"
-                :key="index"
-                @click="openAnnouncement(notification)"
-            >
-            {{ notification.title}}
-              <div v-if="!notification.isUserRead" class="notification-item-badge">
-
-              </div>
-
-          </el-menu-item>
-          </el-menu>
-          <div v-else  class="no_announcement">
-            <h1 >暂无公告</h1>
-          </div>
-        </div>
-      </span>
-
-
-        <template v-if="localToken">
+        <div  class="info-area" v-if="localToken">
           <el-dropdown>
           <span class="user-info">
             <img :src="headImage" alt="User Avatar" class="avatar" />
@@ -133,14 +50,14 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-        </template>
-        <template v-else>
+        </div>
+        <div  class="login-area"  v-else>
         <span class="auth-links">
           <a href="#" @click.prevent="openLoginModal">登录</a>
           <span class="separator">|</span>
           <a href="#" @click.prevent="openRegisterModal">注册</a>
         </span>
-        </template>
+        </div>
       </div>
 
       <!-- 公告内容弹窗 -->
@@ -236,9 +153,12 @@
           </el-form-item>
         </el-form>
       </el-dialog>
-    </el-menu>
-  </div>
+    </div>
 
+    <div class="second-container">
+      <hr>
+    </div>
+  </div>
 </template>
 
 
@@ -618,7 +538,6 @@ const register = async() => {
     console.info(res)
     if(res.data.code===200){
       localStorage.setItem('token',res.data.data.token);
-      ElMessage.success(localStorage.getItem('token'))
       localToken.value=localStorage.getItem('token');
       // headImage.value="http://localhost:8080/myBlog/user/getHead/"+response.data.data.imageUrl;
       localStorage.setItem('headImage',headImage.value);
@@ -667,18 +586,16 @@ const logout = () => {
 </script>
 
 <style scoped>
-.navbar {
+
+.user-area{
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  width: 100%;
-  margin-bottom: 20px;
-  padding: 10px;
+  width: 45%;
 }
 
-.menu-items {
-  display: flex;
-  align-items: center;
+.info-area{
+
 }
 
 .router-link {
@@ -751,42 +668,28 @@ const logout = () => {
 }
 
 .search-container {
-  position: absolute;
-  width: 50%; /* 约1/3宽度 */
-  margin: 0 1rem;
-  top: 15px;
-  left: 400px;
+  justify-content: flex-start;
+  align-content: center;
+  margin-left: 5%;
+  width: 40%;
+
 }
 
-.showDrop{
+.navigation {
   display: flex;
-  position: relative; /*// 位置相对于父目录*/
-  top:0;
-  z-index: 99;
-  background: #fff;
-  border: #6fb2dd solid 1px;
-  height: 300px;
-
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
 }
 
-.search_find {
-  position: absolute;
-  top:0;
-  left: 480px;
-  display: inline-block;
-  width: 450px;
+.first-container{
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
 }
-
-.search_history{
-  position: relative;
-  top:0;
-  display: inline-block;
-  width: 450px;
-  margin-left: 15px;
-}
-
-.remove-history{
-  float: right;
+.second-container{
+  width: 100%;
 }
 
 h4{
@@ -794,62 +697,22 @@ h4{
 }
 
 .search-button{
-  position: absolute;
-  right: 490px;
+
 }
 
 .notification-icon {
   color: #636161;
-  position: relative;
-  top:5px;
-  right: 50px;
 }
 
-.notification-badge {
-  position: absolute;
-  top: -5px;
-  right: -10px;
-  background-color: red;
-  color: white;
-  border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.notification-container{
+  margin-left: 50%;
+  margin-right: 5%;
+}
+.logo{
+  width: 70px;
 }
 
-.notification-item-badge {
-  height: 8px;
-  position: absolute;
-  top: -5px;
-  right: 0;
-  background-color: red;
-  color: white;
-  border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.logo-container{
+  margin-left: 2%;
 }
-
-.announcement-list {
-  position: absolute;
-  background: white;
-  border: 1px solid #d3d3d3;
-  z-index: 1000;
-  right: -100px;
-  top:18px;
-  width: 500px; /* 可以根据需要调整宽度 */
-  height: 500px;
-  overflow-y: auto; /* 启用垂直滚动 */
-}
-
-.no_announcement{
-  color: #636161;
-  text-align: center; /* 文本水平居中 */
-  padding: 10px; /* 添加内边距以增加可读性 */
-}
-
 </style>

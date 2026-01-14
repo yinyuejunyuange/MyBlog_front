@@ -1,6 +1,6 @@
 <template>
   <!-- 左侧菜单栏外层容器 -->
-  <div class="left-menu-container">
+  <div class="left-menu-container" v-if="isHomePage">
 
     <!-- 板块1：首页、下载、学习、社区 -->
     <div class="menu-section">
@@ -44,9 +44,13 @@
 </template>
 <!-- 界面左侧菜单栏 -->
 <script setup lang="ts">
-import { ref } from 'vue';
+import {computed, ref} from 'vue';
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
-import * as byPrefixAndName from "@fortawesome/free-solid-svg-icons"; // 引入ref创建响应式变量
+import * as byPrefixAndName from "@fortawesome/free-solid-svg-icons";
+import {ElMessage} from "element-plus";
+import {useRoute} from "vue-router"; // 引入ref创建响应式变量
+// 获取当前路由对象，判断是否为Home页面
+const route = useRoute();
 // 定义两个板块的菜单数据（结构化管理，方便后续扩展）
 const menuSection1 = [
   { label: "首页", key: "home" ,icon: "fa-solid fa-house" },
@@ -68,6 +72,10 @@ const activeKey = ref('');
 const handleMenuItemClick = (key: string) => {
   activeKey.value = key;
 };
+
+const isHomePage = computed(() => {  // 每次执行都会重新计算
+  return route.path === "/home"; // 你的核心逻辑保留，正确无误
+});
 </script>
 <style scoped>
 .left-menu-container{
@@ -114,16 +122,16 @@ const handleMenuItemClick = (key: string) => {
   }
 }
 /* 针对 某项容器的响应式修改该 */
-/*.menu-section{
-  min-width: 100px;
-  container-type: inline-size; !* 开启容器查询，基于板块自身宽度 *!
-  container-name: menu-section; !* 给容器命名，方便后续查询 *!
+.menu-section{
+  min-width: 60px;
+  container-type: inline-size; /* 开启容器查询，基于板块自身宽度 */
+  container-name: menu-section; /* 给容器命名，方便后续查询 */
 }
 
-@container menu-section (max-width: 150px) {
+@container menu-section (max-width: 120px) {
   .menu-item-label{
     display: none;
   }
-}*/
+}
 
 </style>

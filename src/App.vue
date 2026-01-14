@@ -11,7 +11,7 @@ import Layout from "@/layout/layout.vue"
   </header>
   <main>
     <div class="container">
-      <layout class="layout"/>
+      <layout class="layout"/> <!--不要使用 v-if 会产生重排从而导致出现问题-->
       <div class="content">
         <RouterView></RouterView>
         <AiChat></AiChat>
@@ -53,9 +53,9 @@ header {
 }
 .layout{
   position: fixed;
-  top: 80px;
+  top: 100px;
   left: 0;
-  width: 100%;
+  width: 10%;
   background-color: #ffffff;
 }
 </style>

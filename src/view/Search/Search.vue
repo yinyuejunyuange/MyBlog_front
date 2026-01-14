@@ -224,12 +224,12 @@ onMounted(async () => {
     ElMessage.error("参数错误")
   }
 
-  const response=await axios.get("http://localhost:8080/myBlog/user/blog/getHotBlog",{})
-  if(response.data.code===200){
-    topArticles.value=response.data.data
-  }else{
-    ElMessage.error("搜索失败")
-  }
+  // const response=await axios.get("http://localhost:8080/myBlog/user/blog/getHotBlog",{})
+  // if(response.data.code===200){
+  //   topArticles.value=response.data.data
+  // }else{
+  //   ElMessage.error("搜索失败")
+  // }
 
 })
 

@@ -97,6 +97,7 @@ const handleCategorySelect = (index) => {
   gap: 1rem;
   padding-bottom: 0.5rem;
   overflow: hidden;
+  align-items: center;
 }
 
 .types-list{
@@ -116,7 +117,7 @@ const handleCategorySelect = (index) => {
 }
 .scroll-btn{
   position: relative;
-  top: -0.5vh;
+  top: 0;
 }
 
 

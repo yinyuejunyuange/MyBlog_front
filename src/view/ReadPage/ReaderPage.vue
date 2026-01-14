@@ -1,6 +1,6 @@
 
 <template>
-  <div class="container">
+  <div class="container base_container ">
     <div class="card-group">
       <el-card class="author-info">
         <!--      <img :src="" alt="Author Avatar" class="author-avatar" />-->
@@ -294,6 +294,7 @@ import { getUserInfo } from '@/api/user/user.js'
 import axios from 'axios';
 
 import router from "@/router/router.js";
+import "@/common/css/base.css"
 import { useRoute } from 'vue-router';
 
 
