@@ -131,8 +131,9 @@
 
 <script setup >
 import { ref, computed, watch } from 'vue'
+
 import SparkMD5 from 'spark-md5'
-import {testUploadFile,testMergeFile} from '@/api/blog.js'
+import {testUploadFile,testMergeFile ,getExistFileChunks} from '@/api/blog.js'
 
 const props = defineProps({
   modelValue: {
@@ -169,6 +170,7 @@ const isUploading = ref(false)
 const isFinish = ref(false)
 const calculateProgress = ref(0)
 const uploadProgress = ref(0)
+const existFileChunks = ref([])
 
 // 计算分片总数
 const totalChunks = computed(() => {
@@ -301,15 +303,14 @@ const startUpload = async () => {
   isUploading.value = true
   uploadProgress.value = 0
 
+  // 获取已经上传的文件片段
+  await getExistChunks();
+
   try {
     // 按顺序上传分片
     for (let i = 0; i < chunks.value.length; i++) {
       const chunk = chunks.value[i]
       await uploadChunk(chunk)
-
-      chunk.uploaded = true
-      uploadedChunks.value = chunks.value.filter(c => c.uploaded).length
-      uploadProgress.value = Math.round((uploadedChunks.value / totalChunks.value) * 100)
     }
 
     // 所有分片上传完成，合并文件
@@ -334,32 +335,49 @@ const startUpload = async () => {
   }
 }
 
+// 获取已经上传的分片信息
+const getExistChunks = async() =>{
+  await getExistFileChunks(overallMD5.value+file.value.name)
+      .then(res=>{
+        if(res.data.code ===200){
+          existFileChunks.value = res.data.data
+        }
+      })
+}
+
 // 上传单个分片
 const uploadChunk = async (chunkData) => {
-  const uploadData={
-    fileNo:overallMD5.value+file.value.name,
-    chunkNum:chunkData.index,
-    fileFullMd5:overallMD5.value,
-    md5:chunkData.md5,
-    allChunks:totalChunks.value
+  if(!existFileChunks.value.includes(chunkData.index)){
+    const uploadData={
+      fileNo:overallMD5.value+file.value.name,
+      chunkNum:chunkData.index,
+      fileFullMd5:overallMD5.value,
+      md5:chunkData.md5,
+      allChunks:totalChunks.value
+    }
+
+    // 3. 构造FormData（关键：后端@RequestPart需要FormData传递文件+JSON）
+    const formData = new FormData()
+    // 3.1 追加分片文件（对应后端@RequestPart("file")）
+    formData.append('file', chunkData.chunk)
+    // 3.2 追加FileUploadDTO（对应后端@RequestPart("data")，转成JSON字符串）
+    formData.append('fileUploadDTO', new Blob([JSON.stringify(uploadData)], { type: 'application/json' }))
+
+
+    await testUploadFile(formData).then((res)=>{
+
+      console.info(res)
+      if (!res.data.code===200) {
+        throw new Error(`上传失败: ${res.data.message}`)
+      }
+    })
+  }else{
+    console.log("重复上传")
   }
 
-  console.info("uploadData", uploadData)
-  // 3. 构造FormData（关键：后端@RequestPart需要FormData传递文件+JSON）
-  const formData = new FormData()
-  // 3.1 追加分片文件（对应后端@RequestPart("file")）
-  formData.append('file', chunkData.chunk)
-  // 3.2 追加FileUploadDTO（对应后端@RequestPart("data")，转成JSON字符串）
-  formData.append('fileUploadDTO', new Blob([JSON.stringify(uploadData)], { type: 'application/json' }))
-
-
-  await testUploadFile(formData).then((res)=>{
-
-    console.info(res)
-    if (!res.data.code===200) {
-      throw new Error(`上传失败: ${res.data.message}`)
-    }
-  })
+  chunkData.uploaded = true
+  uploadedChunks.value = chunks.value.filter(c => c.uploaded).length
+  uploadProgress.value = Math.round((uploadedChunks.value / totalChunks.value) * 100)
 
 }
 

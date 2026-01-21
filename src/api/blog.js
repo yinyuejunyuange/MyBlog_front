@@ -70,3 +70,11 @@ export const testUploadFile = async (data) => {
 export const testMergeFile = async (data) => {
     return await request.post('/blog/testMergeFile',data)
 }
+
+export const getExistFileChunks = async(fileNo)=>{
+    return await request.post('/blog/testExistFile',null,{
+        params:{
+            fileNo: fileNo
+        }
+    })
+}
