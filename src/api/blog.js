@@ -58,3 +58,15 @@ export const getBlogBySelectTypeList = async (typeList) => {
         }
     })
 }
+
+export const testUploadFile = async (data) => {
+    return await request.post('/blog/testUploadFile',data,{
+        headers: {
+            'Content-Type': 'multipart/form-data' // 显式指定，确保后端能解析
+        }
+    })
+}
+
+export const testMergeFile = async (data) => {
+    return await request.post('/blog/testMergeFile',data)
+}

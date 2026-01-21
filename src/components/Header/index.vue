@@ -1,5 +1,5 @@
 <template>
-  <div class="flex justify-between items-center h-full pr-0 md:pr-20">
+  <div class="flex justify-between items-center h-full pr-0 md:pr-20 ">
     <img :src="logo" alt="logo" class="w-20 h-20" />
     <div class="hidden md:flex items-center gap-8">
       <el-input

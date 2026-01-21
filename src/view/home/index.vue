@@ -1,20 +1,57 @@
 <template>
-  <div class="flex gap-2 w-full overflow-hidden">
-    <el-tabs v-model="currentCategory">
-      <el-tab-pane
-        v-for="item in categoryList"
-        :key="item.name"
-        :label="item.label"
-        :name="item.index"
-      >
-        {{ item.label }}
-      </el-tab-pane>
-    </el-tabs>
+  <div class = "h-min-[10px]">
+    <el-scrollbar>
+      <div class=" flex w-fit ">
+        <p v-for="item in categoryList"
+           :key="item.name"
+           class="flex-shrink-0 flex items-center
+            justify-center w-min-[50px] h-[30px] m-[10px] pl-[5px] pr-[5px] text-center rounded
+            cursor-pointer bg-gray-100  "
+           :class="{
+        'bg-sky-200 text-sky-600': isActive === item.index, /* 选中后固定样式：更深的浅蓝背景 + 更亮的蓝色文字 */
+        'hover:bg-sky-100 hover:text-sky-500': isActive !== item.index  /* 未选中时保留悬浮效果 */
+      }"
+           @click="clickItem(item.index)"
+        >
+          {{ item.label }}
+        </p>
+      </div>
+    </el-scrollbar>
+    <el-divider />
+    <div class="w-full flex items-center justify-center" >
+      <div class="flex-3 items-center w-min-[500px] bg-sky-200 ">
+        <div class="hot-blog" >
+          <p class="font-bold" >热门头条</p>
+          <div class="hot-blog-image">
+            <Upload v-model=showDialog />
+          </div>
+          <div class="hot-blog-list">
+
+          </div>
+        </div>
+        <div class="hot-project">
+          <p class="font-bold">开源项目</p>
+          <div class="hot-project-list">
+
+          </div>
+        </div>
+        <div class="support-blogs">
+          <p class="font-bold">精选博客</p>
+          <div class="support-blogs-list">
+
+          </div>
+        </div>
+      </div>
+      <div class=" hidden   md:flex md:flex-1 md:items-center  md:bg-gray-500  md:h-[50px]   ">
+
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
+import Upload from "@/components/FileUpload/index.vue"
 const currentCategory = ref("0");
 const categoryList = [
   { index: "0", label: "综合" },
@@ -44,6 +81,20 @@ const categoryList = [
   { index: "GO", label: "Go" },
   { index: "RUST", label: "Rust" },
 ];
+
+const isActive = ref('0')
+const clickItem = (index) => {
+  console.log("index",index)
+  isActive.value = index;
+}
+
+const showDialog = ref(true);
+
 </script>
 
-<style scoped></style>
+<style scoped>
+.el-divider--horizontal {
+  @apply mt-[4px] mb-[4px];
+}
+
+</style>
